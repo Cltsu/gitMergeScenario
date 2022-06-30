@@ -168,52 +168,61 @@ public class GitServiceV2 {
     }
 
 
-    public void threeWayMergeFile(String dic) throws IOException {
-        Path path = Paths.get(dic);
-        Files.walkFileTree(path, new FileVisitor<Path>() {
+    public void threeWayMergeFile(String dir) throws IOException {
+        Path path = Paths.get(dir);
+        Files.walkFileTree(path, new FileVisitor<>() {
+            private int scenarioCount = 0;
+            private int tupleCount = 0;
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                 if(dir.endsWith(".java")){
-                     File[] fs = dir.toFile().listFiles();
-                     File base = null, a = null, b = null, truth = null;
-                     for(var f : fs){
-                         if(f.getName() == "base.java") base = f;
-                         else if(f.getName().equals("ours.java")) a = f;
-                         else if(f.getName().equals("theirs.java")) b = f;
-                         else if(f.getName().equals("truth")) truth = f;
-                     }
-                     if(Arrays.stream(fs).count() == 4){{
-                         File conflict = new File(dir.toString(),"conflict.java");
-                         Files.copy(a.toPath(), conflict.toPath());
-                         ProcessBuilder pb2 = new ProcessBuilder("git",
-                                 "--merge-file",
-                                 "--diff3",
-                                 conflict.getPath(),
-                                 base.getPath(),
-                                 b.getPath());
-                         try {
-                             pb2.start().waitFor();
-                         } catch (InterruptedException e) {
-                             e.printStackTrace();
-                         }
-                     }}
-                 }
+                if (dir.toString().endsWith(".java")) {
+                    logger.info("scenario count : {}", scenarioCount++);
+                    File[] fs = dir.toFile().listFiles();
+                    File base = null, a = null, b = null, truth = null;
+                    for (var f : fs) {
+                        if (f.getName().equals("base.java")) base = f;
+                        else if (f.getName().equals("ours.java")) a = f;
+                        else if (f.getName().equals("theirs.java")) b = f;
+                        else if (f.getName().equals("truth.java")) truth = f;
+                    }
+                    if (base != null && a != null && b != null && truth != null) {
+                        {
+                            logger.info("tuple count : {}", tupleCount++);
+                            File conflict = new File(dir.toString(), "conflict.java");
+                            if(conflict.exists()) conflict.delete();
+                            Files.copy(a.toPath(), conflict.toPath());
+                            logger.info("git merge-file --diff3 {} {} {}", conflict.getPath(), base.getPath(), b.getPath());
+                            ProcessBuilder pb2 = new ProcessBuilder(
+                                    "git",
+                                    "merge-file",
+                                    "--diff3",
+                                    conflict.getPath(),
+                                    base.getPath(),
+                                    b.getPath());
+                            try {
+                                pb2.start().waitFor();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                return null;
+                return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                return null;
+                return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                return null;
+                return FileVisitResult.CONTINUE;
             }
         });
     }
@@ -243,17 +252,11 @@ public class GitServiceV2 {
         String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
         GitServiceV2 gs = new GitServiceV2();
-        Repository repo = gs.CloneIfNotExist(path,"");
-        RevWalk walk = new RevWalk(repo);
-        ObjectId merged = repo.resolve("8a33196571af5d8af43ba2c9ff8dc9cc8ae7dfbe");
-        AnyObjectId a = walk.parseAny(merged);
-        System.out.println(a.getClass());
+//        Repository repo = gs.CloneIfNotExist(path,"");
+        gs.threeWayMergeFile("G:\\output\\platform_packages_apps_settings");
+//        gs.threeWayMergeFile("G:\\output\\test\\test.java");
     }
 
-
-    public static void test3() throws  Exception{
-
-    }
 
     public static void run() throws Exception {
         String gitPath = "D:\\gitProject\\";
@@ -271,6 +274,6 @@ public class GitServiceV2 {
     }
 
     public static void main(String[] args) throws Exception{
-
+        test2();
     }
 }
