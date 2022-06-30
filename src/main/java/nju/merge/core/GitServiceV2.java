@@ -7,10 +7,9 @@ import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.merge.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -27,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GitServiceV2 {
 
@@ -80,48 +80,162 @@ public class GitServiceV2 {
         CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
         newTreeIter.reset(reader, c2.getTree());
 
-        DiffFormatter df = new DiffFormatter(new FileOutputStream("D:\\o.txt"));
-        df.setRepository(git.getRepository());
-        List<DiffEntry> entries = df.scan(oldTreeIter, newTreeIter);
+//        DiffFormatter df = new DiffFormatter(new FileOutputStream("D:\\o.txt"));
+//        df.setRepository(git.getRepository());
+//        List<DiffEntry> entries = df.scan(oldTreeIter, newTreeIter);
 
-//        List<DiffEntry> entries = git.diff()
-//                .setOutputStream(new FileOutputStream("D:\\o.txt"))
-//                .setNewTree(newTreeIter)
-//                .setOldTree(oldTreeIter)
-//                .call();
+        List<DiffEntry> entries = git.diff()
+                .setOutputStream(new FileOutputStream("D:\\o.txt"))
+                .setNewTree(newTreeIter)
+                .setOldTree(oldTreeIter)
+                .call();
 
         return entries;
     }
 
-    public void showDiffs(List<DiffEntry> entries){
-        for( DiffEntry entry : entries ) {
-            System.out.println( entry );
-        }
 
+    public void mergeAndGetConflictFiles(RevCommit merged, Repository repo, String project,String projectPath, String output) throws Exception {
+        RevCommit p1 = merged.getParents()[0];
+        RevCommit p2 = merged.getParents()[1];
+        logger.info("merge {} and {}, merged commit {}", p1.getName(), p2.getName(), merged.getName());
+        ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repo, true);
+        if(!merger.merge(p1, p2)){
+            RecursiveMerger rMerger = (RecursiveMerger)merger;
+            RevCommit base = (RevCommit) rMerger.getBaseCommitId();
+            Map<String, MergeScenario> scenarioMap = new HashMap<>();
+            rMerger.getMergeResults().forEach((file, result) -> {
+                if(file.endsWith(".java") && result.containsConflicts()){
+                    logger.info("conflicts were found in {}", file);
+                    scenarioMap.put(file, new MergeScenario(project, merged.getName(), file));
+//                    System.out.println(file);
+//                    Iterator<MergeChunk> it = result.iterator();
+//                    while(it.hasNext()){
+//                        MergeChunk mc = it.next();
+//                        if(!mc.getConflictState().equals(MergeChunk.ConflictState.NO_CONFLICT)) {
+//                            System.out.println("begin: " + mc.getBegin() + "|end: " + mc.getEnd());
+//                        }
+//                    }
+                }
+            });
+            if(scenarioMap.size() == 0) return;
+
+            logger.info("collecting scenario for merged commit {}", merged.getName());
+            checkout(merged, repo);
+            scenarioMap.forEach((file, scenario) ->{
+                try {
+                    scenario.truth = getFileBytes(projectPath + file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            checkout(p1, repo);
+            scenarioMap.forEach((file, scenario) ->{
+                try {
+                    scenario.ours = getFileBytes(projectPath + file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            checkout(p2, repo);
+            scenarioMap.forEach((file, scenario) ->{
+                try {
+                    scenario.theirs = getFileBytes(projectPath + file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            if(isBaseExist(base, repo)) {
+                checkout(base, repo);
+                scenarioMap.forEach((file, scenario) -> {
+                    try {
+                        scenario.base = getFileBytes(projectPath + file);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+            scenarioMap.forEach((f, s)-> {
+                try {
+                    s.write2folder(output);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    public void checkout(RevCommit commit, Repository repo) throws Exception {
+        Git git = new Git(repo);
+        git.checkout().setName(commit.getName()).call();
+    }
+
+    public boolean isBaseExist(ObjectId id, Repository repo) throws IOException {
+        RevWalk walk = new RevWalk(repo);
+        try {
+            AnyObjectId a = walk.parseAny(id);
+        }catch (MissingObjectException e){
+            logger.info("can't find base {}", id.getName());
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public byte[] getFileBytes(String path) throws IOException {
+        path = path.replace('/','\\');
+        File file = new File(path);
+        if(file.exists()) {
+            Path curPath = Paths.get(path);
+            return Files.readAllBytes(curPath);
+        }else{
+            return null;
+        }
+    }
+
+
+    public List<DiffEntry> filterDiffs(List<DiffEntry> entries){
+        return entries.stream().filter(e ->
+            e.getChangeType().equals(DiffEntry.ChangeType.MODIFY) && e.getNewPath().endsWith(".java")
+        ).collect(Collectors.toList());
     }
 
 
     public static void test1() throws Exception {
         String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
         String output = "D:\\output\\";
-        String project = "platform_packages_apps_settings-bak";
+        String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
         GitServiceV2 gs = new GitServiceV2();
         Repository repo = gs.CloneIfNotExist(path,"");
-
-        ObjectId o1 = repo.resolve("58c95f3cf1f02374306c9ddd21c5d320f4417cd2");
-        ObjectId o2 = repo.resolve("d89c58724ce0e2e8f5c1b4a308e5999ceb46ffb5");
+        ObjectId merged = repo.resolve("7bd23716c3bd71ae2f0d07da8e3dd9ef0cea0992");
         RevWalk walk = new RevWalk(repo);
-        RevCommit c1 = walk.parseCommit(o1);
-        RevCommit c2 = walk.parseCommit(o2);
-        List<DiffEntry> entries = gs.diffTwoCommits(c1, c2, repo);
-        gs.showDiffs(entries);
+        RevCommit m1 = walk.parseCommit(merged);
+
+        gs.mergeAndGetConflictFiles(m1, repo, project, path, output);
+//        List<DiffEntry> entries = gs.diffTwoCommits(c1, c2, repo);
+//        entries = gs.filterDiffs(entries);
+//        gs.showDiffs(entries);
     }
+
+
+    public static void test2() throws Exception {
+        String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
+        String output = "D:\\output\\";
+        String project = "platform_packages_apps_settings";
+        String path = gitPath + project + "\\";
+        GitServiceV2 gs = new GitServiceV2();
+        Repository repo = gs.CloneIfNotExist(path,"");
+        RevWalk walk = new RevWalk(repo);
+        ObjectId merged = repo.resolve("8a33196571af5d8af43ba2c9ff8dc9cc8ae7dfbe");
+        AnyObjectId a = walk.parseAny(merged);
+        System.out.println(a.getClass());
+    }
+
 
     public static void run() throws Exception {
         String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
         String output = "D:\\output\\";
-        String project = "platform_packages_apps_settings-bak";
+        String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
         GitServiceV2 gs = new GitServiceV2();
         Repository repo = gs.CloneIfNotExist(path,"");
@@ -129,11 +243,11 @@ public class GitServiceV2 {
         List<RevCommit> commits = gs.collectMergeCommits(repo);
         Map<String, MergeScenario> map = new HashMap<>();
         for(RevCommit c : commits){
-
+            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
         }
     }
 
     public static void main(String[] args) throws Exception{
-        test1();
+        run();
     }
 }

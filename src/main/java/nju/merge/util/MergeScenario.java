@@ -40,7 +40,7 @@ public class MergeScenario {
         write1file(absPath + "base.java", this.base);
         write1file(absPath + "ours.java", this.ours);
         write1file(absPath + "theirs.java", this.theirs);
-        write1file(absPath + "conflicting.java", this.conflicting);
+//        write1file(absPath + "conflicting.java", this.conflicting);
         write1file(absPath + "truth.java", this.truth);
     }
 
