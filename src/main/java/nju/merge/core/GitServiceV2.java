@@ -22,9 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,30 +66,6 @@ public class GitServiceV2 {
             }
         }
         return commits;
-    }
-
-
-    public List<DiffEntry> diffTwoCommits(RevCommit c1, RevCommit c2, Repository repo) throws Exception {
-        logger.info("diff {} and {}", c1.getId(), c2.getId());
-        Git git = new Git(repo);
-
-        ObjectReader reader = git.getRepository().newObjectReader();
-        CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-        oldTreeIter.reset(reader, c1.getTree());
-        CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-        newTreeIter.reset(reader, c2.getTree());
-
-//        DiffFormatter df = new DiffFormatter(new FileOutputStream("D:\\o.txt"));
-//        df.setRepository(git.getRepository());
-//        List<DiffEntry> entries = df.scan(oldTreeIter, newTreeIter);
-
-        List<DiffEntry> entries = git.diff()
-                .setOutputStream(new FileOutputStream("D:\\o.txt"))
-                .setNewTree(newTreeIter)
-                .setOldTree(oldTreeIter)
-                .call();
-
-        return entries;
     }
 
 
@@ -193,15 +168,59 @@ public class GitServiceV2 {
     }
 
 
-    public List<DiffEntry> filterDiffs(List<DiffEntry> entries){
-        return entries.stream().filter(e ->
-            e.getChangeType().equals(DiffEntry.ChangeType.MODIFY) && e.getNewPath().endsWith(".java")
-        ).collect(Collectors.toList());
+    public void threeWayMergeFile(String dic) throws IOException {
+        Path path = Paths.get(dic);
+        Files.walkFileTree(path, new FileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                 if(dir.endsWith(".java")){
+                     File[] fs = dir.toFile().listFiles();
+                     File base = null, a = null, b = null, truth = null;
+                     for(var f : fs){
+                         if(f.getName() == "base.java") base = f;
+                         else if(f.getName().equals("ours.java")) a = f;
+                         else if(f.getName().equals("theirs.java")) b = f;
+                         else if(f.getName().equals("truth")) truth = f;
+                     }
+                     if(Arrays.stream(fs).count() == 4){{
+                         File conflict = new File(dir.toString(),"conflict.java");
+                         Files.copy(a.toPath(), conflict.toPath());
+                         ProcessBuilder pb2 = new ProcessBuilder("git",
+                                 "--merge-file",
+                                 "--diff3",
+                                 conflict.getPath(),
+                                 base.getPath(),
+                                 b.getPath());
+                         try {
+                             pb2.start().waitFor();
+                         } catch (InterruptedException e) {
+                             e.printStackTrace();
+                         }
+                     }}
+                 }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                return null;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return null;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                return null;
+            }
+        });
     }
 
 
     public static void test1() throws Exception {
-        String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
+        String gitPath = "D:\\gitProject\\";
         String output = "D:\\output\\";
         String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
@@ -219,7 +238,7 @@ public class GitServiceV2 {
 
 
     public static void test2() throws Exception {
-        String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
+        String gitPath = "D:\\gitProject\\";
         String output = "D:\\output\\";
         String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
@@ -232,8 +251,12 @@ public class GitServiceV2 {
     }
 
 
+    public static void test3() throws  Exception{
+
+    }
+
     public static void run() throws Exception {
-        String gitPath = "D:\\OneDrive - 南京大学\\Project\\github\\";
+        String gitPath = "D:\\gitProject\\";
         String output = "D:\\output\\";
         String project = "platform_packages_apps_settings";
         String path = gitPath + project + "\\";
@@ -248,6 +271,6 @@ public class GitServiceV2 {
     }
 
     public static void main(String[] args) throws Exception{
-        run();
+
     }
 }
