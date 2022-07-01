@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 public class GitServiceV2 {
 
-    private static final Logger logger = LoggerFactory.getLogger(GitService.class);
+    private static final Logger logger = LoggerFactory.getLogger(GitServiceV2.class);
 
     public Repository CloneIfNotExist(String path, String url) throws Exception {
         File gitFolder = new File(path);
@@ -253,7 +253,7 @@ public class GitServiceV2 {
         String path = gitPath + project + "\\";
         GitServiceV2 gs = new GitServiceV2();
 //        Repository repo = gs.CloneIfNotExist(path,"");
-        gs.threeWayMergeFile("G:\\output\\platform_packages_apps_settings");
+        gs.threeWayMergeFile("D:\\output\\platform_packages_apps_settings");
 //        gs.threeWayMergeFile("G:\\output\\test\\test.java");
     }
 
