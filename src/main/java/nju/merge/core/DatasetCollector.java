@@ -101,7 +101,7 @@ public class DatasetCollector {
         return source.subList(start + 1, end);
     }
 
-    public void writeTuples2Json(List<MergeTuple> tuples, String project, String output) throws Exception {
+    public static void writeTuples2Json(List<MergeTuple> tuples, String project, String output) throws Exception {
         JSONObject json = new JSONObject();
         json.put("Project", project);
         JSONArray array = new JSONArray();
@@ -169,7 +169,7 @@ public class DatasetCollector {
         DatasetCollector dc = new DatasetCollector();
         dc.extractFromProject(project,"G:\\output\\platform_packages_apps_settings");
 //        dc.showTuples();
-        dc.writeTuples2Json(dc.allTuple, project, output);
+        writeTuples2Json(dc.allTuple, project, output);
         System.out.println(dc.allTuple.size());
     }
 

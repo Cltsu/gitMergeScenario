@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONReader;
 import nju.merge.entity.MergeScenario;
 import nju.merge.entity.MergeTuple;
+import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,43 +28,41 @@ public class DatasetFilter {
     }
 
 
+    public static boolean filterIncompleteTuple(MergeTuple tuple){
+        return !(tuple.r.size() == 0 || tuple.a.size() == 0 || tuple.b.size() == 0);
+    }
+
     public static boolean filterAcceptOneSide(MergeTuple tuple){
         return equalCodeSnippet(tuple.r, tuple.a) || equalCodeSnippet(tuple.r, tuple.b) || equalCodeSnippet(tuple.r, tuple.o);
     }
 
-    public static boolean filterIncompleteTuple(MergeTuple tuple){
-        return false;
-    }
 
     public static boolean filterConcat(MergeTuple tuple){
         if(tuple.a.size() == 0 || tuple.b.size() == 0) return false;
         if(tuple.r.size() == tuple.a.size() + tuple.b.size()){
-            if(tuple.r.get(0).equals(tuple.a.get(0))){
-                return equalCodeSnippet(tuple.r.subList(0, tuple.a.size()), tuple.a) &&
-                        equalCodeSnippet(tuple.r.subList(tuple.a.size(), tuple.r.size()), tuple.b);
-            }else if(tuple.r.get(0).equals(tuple.b.get(0))){
-                return equalCodeSnippet(tuple.r.subList(0, tuple.b.size()), tuple.b) &&
-                        equalCodeSnippet(tuple.r.subList(tuple.b.size(), tuple.r.size()), tuple.a);
-            }
+            return equalCodeSnippet(tuple.r.subList(0, tuple.a.size()), tuple.a) &&
+                    equalCodeSnippet(tuple.r.subList(tuple.a.size(), tuple.r.size()), tuple.b)
+                    ||
+                    equalCodeSnippet(tuple.r.subList(0, tuple.b.size()), tuple.b) &&
+                            equalCodeSnippet(tuple.r.subList(tuple.b.size(), tuple.r.size()), tuple.a);
         }
         return false;
     }
 
 
     public static boolean filterMixLine(MergeTuple tuple){
-        if(filterAcceptOneSide(tuple)) return false;
+        return !(tuple.r.size() == 0 || filterAcceptOneSide(tuple) || filterConcat(tuple) || filterOutOfVocabularyLine(tuple));
+    }
+
+
+    public static boolean filterOutOfVocabularyLine(MergeTuple tuple){
         Set<String> uniqueLines = new HashSet<>();
         uniqueLines.addAll(tuple.a);
         uniqueLines.addAll(tuple.b);
         uniqueLines.addAll(tuple.o);
         for(var s : tuple.r){
-            if(!uniqueLines.contains(s)) return false;
+            if(!uniqueLines.contains(s)) return true;
         }
-        return true;
-    }
-
-
-    public static boolean filterOutOfVocabularyLine(MergeTuple tuple){
         return false;
     }
 
@@ -127,7 +126,6 @@ public class DatasetFilter {
         reader.close();
     }
 
-
     public void saveMix2Json(){
 
     }
@@ -138,14 +136,25 @@ public class DatasetFilter {
     }
 
 
-    public void analysis(){
-        logger.info("there are {} tuples", this.tuples.size());
+    public void analysis() throws Exception {
+        String project = "platform_packages_apps_settings";
+        String output = "G:\\output\\tuples\\mixlines.json";
+        logger.info("Total tuples : {}", this.tuples.size());
+
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).toList();
+        logger.info("Accept one side : {} ", acceptOneSide.size());
+
+        this.tuples = this.tuples.stream().filter(DatasetFilter::filterIncompleteTuple).toList();
+        logger.info("complete tuples : {}", this.tuples.size());
+
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).toList();
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).toList();
-        logger.info("Accept one side : {} ", acceptOneSide.size());
+        List<MergeTuple> outofVoca = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).toList();
+
         logger.info("Concat : {} ", concat.size());
-        logger.info("mixLine : {} ", mixLine.size());
+        logger.info("MixLine : {} ", mixLine.size());
+        logger.info("Out of vocabulary : {} ", outofVoca.size());
+        DatasetCollector.writeTuples2Json(mixLine, project, output);
     }
 
     public static void main(String[] args) throws Exception{
