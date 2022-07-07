@@ -1,4 +1,4 @@
-package nju.merge.util;
+package nju.merge.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ public class MergeScenario {
     public String project;
     public String commitID;
 
-    private static final Logger logger = LoggerFactory.getLogger(GitService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MergeScenario.class);
 
     public MergeScenario(String fileName){
         this.fileName = fileName;

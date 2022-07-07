@@ -1,4 +1,4 @@
-package nju.merge.util;
+package nju.merge.entity;
 
 import java.util.ArrayList;
 import java.util.List;

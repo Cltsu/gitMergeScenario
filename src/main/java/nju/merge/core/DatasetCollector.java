@@ -2,8 +2,7 @@ package nju.merge.core;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import nju.merge.util.GitService;
-import nju.merge.util.MergeTuple;
+import nju.merge.entity.MergeTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,13 +64,9 @@ public class DatasetCollector {
             tuple.r = getCodeSnippets(res, startLineRes, endLineRes);
         });
 
-//        showTuples(tuples);
         return tuples;
     }
 
-    public void showTuples(){
-        System.out.println(allTuple);
-    }
 
     public int alignLine(List<String> prefix, List<String> resolve, boolean reverse){
         List<String> snippet = new ArrayList<>();
@@ -84,8 +79,8 @@ public class DatasetCollector {
             source.addAll(resolve);
         }
         int ret = 0;
+        int maxAlign = -1;
         for(int i = 0; i < source.size(); i++){
-            int maxAlign = -1;
             if(maxAlign >= 5) break;
             if(source.get(i).equals(snippet.get(0))){
                 int j = i, k = 0;
@@ -97,12 +92,12 @@ public class DatasetCollector {
             }
         }
         if(reverse){
-            return source.size() - ret;
+            return source.size() - ret - 1;
         }else return ret;
     }
 
     public List<String> getCodeSnippets(List<String> source, int start, int end){
-        if(start == end) return new ArrayList<>();
+        if(start >= end) return new ArrayList<>();
         return source.subList(start + 1, end);
     }
 
@@ -112,11 +107,11 @@ public class DatasetCollector {
         JSONArray array = new JSONArray();
         tuples.forEach(tuple -> {
             JSONObject tmp = new JSONObject();
-            tmp.put("file", tuple.path);
-            tmp.put("A", tuple.a);
-            tmp.put("B", tuple.b);
-            tmp.put("O", tuple.o);
-            tmp.put("R", tuple.r);
+            tmp.put("path", tuple.path);
+            tmp.put("a", tuple.a);
+            tmp.put("b", tuple.b);
+            tmp.put("o", tuple.o);
+            tmp.put("r", tuple.r);
             array.add(tmp);
         });
         json.put("mergeTuples", array);
@@ -170,9 +165,9 @@ public class DatasetCollector {
 
     public static void run() throws Exception {
         String project = "platform_packages_apps_settings";
-        String output = "D:\\output\\tuples\\tmp.json";
+        String output = "G:\\output\\tuples\\tmp.json";
         DatasetCollector dc = new DatasetCollector();
-        dc.extractFromProject(project,"D:\\output\\platform_packages_apps_settings\\");
+        dc.extractFromProject(project,"G:\\output\\platform_packages_apps_settings");
 //        dc.showTuples();
         dc.writeTuples2Json(dc.allTuple, project, output);
         System.out.println(dc.allTuple.size());

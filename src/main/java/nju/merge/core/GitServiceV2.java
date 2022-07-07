@@ -1,31 +1,21 @@
 package nju.merge.core;
 
-import nju.merge.util.GitService;
-import nju.merge.util.MergeScenario;
+import nju.merge.entity.MergeScenario;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.MergeResult;
-import org.eclipse.jgit.api.errors.*;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.merge.*;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class GitServiceV2 {
 
