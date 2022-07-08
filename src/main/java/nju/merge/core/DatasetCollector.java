@@ -103,8 +103,6 @@ public class DatasetCollector {
     }
 
 
-
-
     public void extractFromProject(String dir) throws IOException {
         Path path = Paths.get(dir);
         Files.walkFileTree(path, new FileVisitor<>() {

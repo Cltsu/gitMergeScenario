@@ -6,6 +6,8 @@ import nju.merge.core.DatasetFilter;
 import nju.merge.core.GitService;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,13 +17,13 @@ public class Client {
 
     private static final String output = "G:\\merge\\output\\";
     private static final String gitPath = "G:\\merge\\gitRepos\\";
-
+    private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addSimpleRepo(Map<String, String> repos){
         repos.put("junit4","https://github.com/junit-team/junit4.git");
     }
 
-    public static void addReposFromTxt(String txtPath, Map<String, String> repos){
+    public static void addReposFromText(String txtPath, Map<String, String> repos){
 
     }
 

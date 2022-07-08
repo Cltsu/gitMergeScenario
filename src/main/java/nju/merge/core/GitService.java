@@ -73,18 +73,9 @@ public class GitService {
                 if(file.endsWith(".java") && result.containsConflicts()){
                     logger.info("conflicts were found in {}", file);
                     scenarioMap.put(file, new MergeScenario(project, merged.getName(), file));
-//                    System.out.println(file);
-//                    Iterator<MergeChunk> it = result.iterator();
-//                    while(it.hasNext()){
-//                        MergeChunk mc = it.next();
-//                        if(!mc.getConflictState().equals(MergeChunk.ConflictState.NO_CONFLICT)) {
-//                            System.out.println("begin: " + mc.getBegin() + "|end: " + mc.getEnd());
-//                        }
-//                    }
                 }
             });
             if(scenarioMap.size() == 0) return;
-
             logger.info("collecting scenario for merged commit {}", merged.getName());
             checkout(merged, repo);
             scenarioMap.forEach((file, scenario) ->{
@@ -217,24 +208,55 @@ public class GitService {
             }
         });
     }
+    
+    public static void test1() throws Exception {
+        String gitPath = "G:\\merge\\gitRepos\\";
+        String output = "G:\\merge\\output\\";
+        String project = "junit4";
+        String path = gitPath + project + "\\";
+        GitService gs = new GitService();
+        Repository repo = gs.CloneIfNotExist(path,"");
+
+        ObjectId m2 = repo.resolve("baf1ea01ec9c1ca2ba3091c493f0aedeab725560");
+        ObjectId m3 = repo.resolve("b1cf4b5bc6ead8c3dfcbbb9ebe69be85f5e53cb8");
+        RevWalk walk = new RevWalk(repo);
+
+        RevCommit r2 = walk.parseCommit(m2);
+        RevCommit r3 = walk.parseCommit(m3);
 
 
-//    public static void run() throws Exception {
-//        String gitPath = "D:\\gitProject\\";
-//        String output = "D:\\output\\";
-//        String project = "platform_packages_apps_settings";
-//        String path = gitPath + project + "\\";
-//        GitService gs = new GitService();
+        gs.mergeAndGetConflictFiles(r2, repo, project, path, output);
+        gs.mergeAndGetConflictFiles(r3, repo, project, path, output);
+    }
+
+
+    public static void test2() throws Exception {
+        String gitPath = "D:\\gitProject\\";
+        String output = "D:\\output\\";
+        String project = "platform_packages_apps_settings";
+        String path = gitPath + project + "\\";
+        GitService gs = new GitService();
 //        Repository repo = gs.CloneIfNotExist(path,"");
-//
-//        List<RevCommit> commits = gs.collectMergeCommits(repo);
-//        Map<String, MergeScenario> map = new HashMap<>();
-//        for(RevCommit c : commits){
-//            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
-//        }
-//    }
-//
-//    public static void main(String[] args) throws Exception{
-//        run();
-//    }
+        gs.threeWayMergeFile("D:\\output\\platform_packages_apps_settings");
+//        gs.threeWayMergeFile("G:\\output\\test\\test.java");
+    }
+
+    public static void run() throws Exception {
+        String gitPath = "G:\\merge\\gitRepos\\";
+        String output = "G:\\merge\\output\\";
+        String project = "junit4";
+        String path = gitPath + project + "\\";
+        GitService gs = new GitService();
+        Repository repo = gs.CloneIfNotExist(path,"");
+
+        List<RevCommit> commits = gs.collectMergeCommits(repo);
+        Map<String, MergeScenario> map = new HashMap<>();
+        for(RevCommit c : commits){
+            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
+        }
+    }
+
+    public static void main(String[] args) throws Exception{
+        run();
+    }
 }

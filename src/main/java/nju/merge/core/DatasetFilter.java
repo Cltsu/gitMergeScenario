@@ -85,11 +85,6 @@ public class DatasetFilter {
     }
 
 
-    public void showResults(){
-
-    }
-
-
     public void analysis() throws Exception {
         String project = "platform_packages_apps_settings";
         String output = "G:\\output\\tuples\\mixlines.json";
