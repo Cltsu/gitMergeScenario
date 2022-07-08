@@ -17,21 +17,22 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
-public class GitServiceV2 {
+public class GitService {
 
-    private static final Logger logger = LoggerFactory.getLogger(GitServiceV2.class);
+    private static final Logger logger = LoggerFactory.getLogger(GitService.class);
 
     public Repository CloneIfNotExist(String path, String url) throws Exception {
         File gitFolder = new File(path);
         Repository repo;
         if(gitFolder.exists()) {
-            logger.info("git repo is found...........");
+            logger.info("git repo {} is found...........", path);
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
             repo = builder.setGitDir(new File(gitFolder, ".git"))
                     .readEnvironment()
                     .findGitDir()
                     .build();
         } else{
+            logger.info("downloading git repo from {}...........", url);
             Git git = Git.cloneRepository()
                     .setGitDir(gitFolder)
                     .setURI(url)
@@ -218,52 +219,22 @@ public class GitServiceV2 {
     }
 
 
-    public static void test1() throws Exception {
-        String gitPath = "D:\\gitProject\\";
-        String output = "D:\\output\\";
-        String project = "platform_packages_apps_settings";
-        String path = gitPath + project + "\\";
-        GitServiceV2 gs = new GitServiceV2();
-        Repository repo = gs.CloneIfNotExist(path,"");
-        ObjectId merged = repo.resolve("7bd23716c3bd71ae2f0d07da8e3dd9ef0cea0992");
-        RevWalk walk = new RevWalk(repo);
-        RevCommit m1 = walk.parseCommit(merged);
-
-        gs.mergeAndGetConflictFiles(m1, repo, project, path, output);
-//        List<DiffEntry> entries = gs.diffTwoCommits(c1, c2, repo);
-//        entries = gs.filterDiffs(entries);
-//        gs.showDiffs(entries);
-    }
-
-
-    public static void test2() throws Exception {
-        String gitPath = "D:\\gitProject\\";
-        String output = "D:\\output\\";
-        String project = "platform_packages_apps_settings";
-        String path = gitPath + project + "\\";
-        GitServiceV2 gs = new GitServiceV2();
+//    public static void run() throws Exception {
+//        String gitPath = "D:\\gitProject\\";
+//        String output = "D:\\output\\";
+//        String project = "platform_packages_apps_settings";
+//        String path = gitPath + project + "\\";
+//        GitService gs = new GitService();
 //        Repository repo = gs.CloneIfNotExist(path,"");
-        gs.threeWayMergeFile("D:\\output\\platform_packages_apps_settings");
-//        gs.threeWayMergeFile("G:\\output\\test\\test.java");
-    }
-
-
-    public static void run() throws Exception {
-        String gitPath = "D:\\gitProject\\";
-        String output = "D:\\output\\";
-        String project = "platform_packages_apps_settings";
-        String path = gitPath + project + "\\";
-        GitServiceV2 gs = new GitServiceV2();
-        Repository repo = gs.CloneIfNotExist(path,"");
-
-        List<RevCommit> commits = gs.collectMergeCommits(repo);
-        Map<String, MergeScenario> map = new HashMap<>();
-        for(RevCommit c : commits){
-            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
-        }
-    }
-
-    public static void main(String[] args) throws Exception{
-        test2();
-    }
+//
+//        List<RevCommit> commits = gs.collectMergeCommits(repo);
+//        Map<String, MergeScenario> map = new HashMap<>();
+//        for(RevCommit c : commits){
+//            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
+//        }
+//    }
+//
+//    public static void main(String[] args) throws Exception{
+//        run();
+//    }
 }

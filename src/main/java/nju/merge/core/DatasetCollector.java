@@ -2,6 +2,7 @@ package nju.merge.core;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import nju.merge.IO.JSONUtils;
 import nju.merge.entity.MergeTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,28 +102,10 @@ public class DatasetCollector {
         return source.subList(start + 1, end);
     }
 
-    public static void writeTuples2Json(List<MergeTuple> tuples, String project, String output) throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("Project", project);
-        JSONArray array = new JSONArray();
-        tuples.forEach(tuple -> {
-            JSONObject tmp = new JSONObject();
-            tmp.put("path", tuple.path);
-            tmp.put("a", tuple.a);
-            tmp.put("b", tuple.b);
-            tmp.put("o", tuple.o);
-            tmp.put("r", tuple.r);
-            array.add(tmp);
-        });
-        json.put("mergeTuples", array);
-        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(output));
-        osw.write(json.toJSONString());
-        osw.flush();
-        osw.close();
-    }
 
 
-    public void extractFromProject(String project, String dir) throws IOException {
+
+    public void extractFromProject(String dir) throws IOException {
         Path path = Paths.get(dir);
         Files.walkFileTree(path, new FileVisitor<>() {
             @Override
@@ -163,18 +146,18 @@ public class DatasetCollector {
     }
 
 
-    public static void run() throws Exception {
-        String project = "platform_packages_apps_settings";
-        String output = "G:\\output\\tuples\\tmp.json";
-        DatasetCollector dc = new DatasetCollector();
-        dc.extractFromProject(project,"G:\\output\\platform_packages_apps_settings");
-//        dc.showTuples();
-        writeTuples2Json(dc.allTuple, project, output);
-        System.out.println(dc.allTuple.size());
-    }
-
-
-    public static void main(String[] args) throws Exception{
-        run();
-    }
+//    public static void run() throws Exception {
+//        String project = "platform_packages_apps_settings";
+//        String output = "G:\\output\\tuples\\tmp.json";
+//        DatasetCollector dc = new DatasetCollector();
+//        dc.extractFromProject("G:\\output\\platform_packages_apps_settings");
+////        dc.showTuples();
+//        JSONUtils.writeTuples2Json(dc.allTuple, project, output);
+//        System.out.println(dc.allTuple.size());
+//    }
+//
+//
+//    public static void main(String[] args) throws Exception{
+//        run();
+//    }
 }

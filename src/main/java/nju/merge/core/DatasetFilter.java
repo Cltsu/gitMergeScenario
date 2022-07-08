@@ -3,6 +3,7 @@ package nju.merge.core;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONReader;
+import nju.merge.IO.JSONUtils;
 import nju.merge.entity.MergeScenario;
 import nju.merge.entity.MergeTuple;
 import org.eclipse.jgit.api.MergeCommand;
@@ -17,6 +18,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static nju.merge.IO.JSONUtils.loadTuplesFromJson;
 
 public class DatasetFilter {
 
@@ -66,9 +69,6 @@ public class DatasetFilter {
         return false;
     }
 
-    public static List<String> removeBlankLine(List<String> lines){
-        return lines.stream().filter(line -> !"".equals(line)).toList();
-    }
 
     private static boolean equalCodeSnippet(List<String> one, List<String> another){
         if(one.size() == another.size()){
@@ -78,52 +78,6 @@ public class DatasetFilter {
             return true;
         }
         return false;
-    }
-
-
-    public void loadTuplesFromJson(String path) throws Exception{
-        File json = new File(path);
-        if(!json.exists()){
-            logger.info("cant find JSON file : {}", path);
-        }
-        this.tuples = new ArrayList<>();
-        JSONReader reader = new JSONReader(new FileReader(path));
-        reader.startObject();
-        while(reader.hasNext()){
-            String k1 = reader.readString();
-            if(k1.equals("Project")){
-                reader.readString();
-            } else if(k1.equals("mergeTuples")){
-                reader.startArray();
-                while(reader.hasNext()){
-                    reader.startObject();
-                    MergeTuple tmp = new MergeTuple();
-                    while(reader.hasNext()) {
-                        String key = reader.readString();
-                        if("a".equals(key)){
-                            tmp.a = reader.readObject(List.class);
-                        }else if("b".equals(key)){
-                            tmp.b = reader.readObject(List.class);
-                        }else if("o".equals(key)){
-                            tmp.o = reader.readObject(List.class);
-                        }else if("r".equals(key)){
-                            tmp.r = reader.readObject(List.class);
-                        }else if("path".equals(key)){
-                            tmp.path = reader.readObject(String.class);
-                        }
-                    }
-                    tmp.a = removeBlankLine(tmp.a);
-                    tmp.b = removeBlankLine(tmp.b);
-                    tmp.o = removeBlankLine(tmp.o);
-                    tmp.r = removeBlankLine(tmp.r);
-                    this.tuples.add(tmp);
-                    reader.endObject();
-                }
-                reader.endArray();
-            }
-        }
-        reader.endObject();
-        reader.close();
     }
 
     public void saveMix2Json(){
@@ -145,7 +99,7 @@ public class DatasetFilter {
         logger.info("Accept one side : {} ", acceptOneSide.size());
 
         this.tuples = this.tuples.stream().filter(DatasetFilter::filterIncompleteTuple).toList();
-        logger.info("complete tuples : {}", this.tuples.size());
+        logger.info("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).toList();
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).toList();
@@ -154,12 +108,12 @@ public class DatasetFilter {
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outofVoca.size());
-        DatasetCollector.writeTuples2Json(mixLine, project, output);
+        JSONUtils.writeTuples2Json(mixLine, project, output);
     }
 
-    public static void main(String[] args) throws Exception{
-        String path = "G:\\output\\tuples\\tmp.json";
-        DatasetFilter df = new DatasetFilter(path);
-        df.analysis();
-    }
+//    public static void main(String[] args) throws Exception{
+//        String path = "G:\\output\\tuples\\tmp.json";
+//        DatasetFilter df = new DatasetFilter(path);
+//        df.analysis();
+//    }
 }
