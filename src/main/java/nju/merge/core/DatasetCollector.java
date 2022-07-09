@@ -70,6 +70,9 @@ public class DatasetCollector {
 
 
     public int alignLine(List<String> prefix, List<String> resolve, boolean reverse){
+        if(prefix.isEmpty()){
+            return reverse ? -1 : resolve.size();
+        }
         List<String> snippet = new ArrayList<>();
         List<String> source = new ArrayList<>();
         if(reverse){

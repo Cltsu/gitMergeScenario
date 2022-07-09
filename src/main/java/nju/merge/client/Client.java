@@ -36,8 +36,11 @@ public class Client {
             String outputConflictFiles = output + "\\" + "conflictFiles\\";
             String outputJsonPath = output + "\\" + "mergeTuples" + "\\";
             try {
+                logger.info("--------------------------collect conflict files----------------------------------");
                 collectGitConflicts(path, project, url, outputConflictFiles);
+                logger.info("--------------------------collect merge tuples----------------------------------");
                 collectMergeScenario(outputJsonPath, project, outputConflictFiles);
+                logger.info("--------------------------merge tuples analysis----------------------------------");
                 mergeTuplesAnalysis(outputJsonPath + project + ".json");
             } catch (Exception e) {
                 throw new RuntimeException(e);

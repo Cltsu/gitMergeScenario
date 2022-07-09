@@ -27,7 +27,7 @@ public class DatasetFilter {
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
     public DatasetFilter(String path) throws Exception {
-        loadTuplesFromJson(path);
+        this.tuples = loadTuplesFromJson(path);
     }
 
 

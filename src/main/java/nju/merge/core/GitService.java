@@ -96,18 +96,16 @@ public class GitService {
     private void mergeAndGetCMS(RevCommit merged, List<CommitMergeScenario> mergeScenarios) throws Exception {
         RevCommit p1 = merged.getParents()[0];
         RevCommit p2 = merged.getParents()[1];
-        logger.info("merge {} and {}, merged commit {}", p1.getName(), p2.getName(), merged.getName());
+        logger.info("merge {} and {}, child commit {}", p1.getName(), p2.getName(), merged.getName());
         ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repo, true);
         if(!merger.merge(p1, p2)){
             RecursiveMerger rMerger = (RecursiveMerger)merger;
             RevCommit base = (RevCommit) rMerger.getBaseCommitId();
-//
             CommitMergeScenario cms = new CommitMergeScenario();
             rMerger.getMergeResults().forEach((file, result) -> {
                 if(file.endsWith(".java") && result.containsConflicts()){
                     logger.info("conflicts were found in {}", file);
                     cms.conflictFiles.add(file);
-//                    scenarioMap.put(file, new MergeScenario(project, merged.getName(), file));
                 }
             });
             if(cms.conflictFiles.size() != 0){
@@ -132,8 +130,8 @@ public class GitService {
         RevCommit base = cms.base;
         RevCommit p1 = cms.ours;
         RevCommit p2 = cms.theirs;
-        logger.info("collecting scenario for merged commit {}", merged.getName());
-        checkout(merged, repo);
+        logger.info("collecting scenario in merged commit {}", merged.getName());
+        checkout2(merged);
         scenarioMap.forEach((file, scenario) ->{
             try {
                 scenario.truth = getFileBytes(projectPath + file);
@@ -141,7 +139,7 @@ public class GitService {
                 e.printStackTrace();
             }
         });
-        checkout(p1, repo);
+        checkout2(p1);
         scenarioMap.forEach((file, scenario) ->{
             try {
                 scenario.ours = getFileBytes(projectPath + file);
@@ -149,7 +147,7 @@ public class GitService {
                 e.printStackTrace();
             }
         });
-        checkout(p2, repo);
+        checkout2(p2);
         scenarioMap.forEach((file, scenario) ->{
             try {
                 scenario.theirs = getFileBytes(projectPath + file);
@@ -157,8 +155,8 @@ public class GitService {
                 e.printStackTrace();
             }
         });
-        if(isBaseExist(base, repo)) {
-            checkout(base, repo);
+        if(isBaseExist(base)) {
+            checkout2(base);
             scenarioMap.forEach((file, scenario) -> {
                 try {
                     scenario.base = getFileBytes(projectPath + file);
@@ -176,13 +174,24 @@ public class GitService {
         });
     }
 
-    private void checkout(RevCommit commit, Repository repo) throws Exception {
-        Git git = new Git(repo);
-        git.checkout().setAllPaths(true).setName(commit.getName()).call();
+    private void checkout(RevCommit commit) throws Exception {
+        Git git = new Git(this.repo);
+        git.checkout().setName(commit.getName()).call();
+        git.close();
     }
 
-    private boolean isBaseExist(ObjectId id, Repository repo) throws IOException {
-        RevWalk walk = new RevWalk(repo);
+
+    private void checkout2(RevCommit commit) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(
+                "git",
+                "checkout",
+                commit.getName());
+        pb.directory(new File(this.projectPath));
+        pb.start().waitFor();
+    }
+
+    private boolean isBaseExist(ObjectId id) throws IOException {
+        RevWalk walk = new RevWalk(this.repo);
         try {
             AnyObjectId a = walk.parseAny(id);
         }catch (MissingObjectException e){
@@ -208,12 +217,9 @@ public class GitService {
     private void threeWayMergeFile(String dir) throws IOException {
         Path path = Paths.get(dir);
         Files.walkFileTree(path, new FileVisitor<>() {
-            private int scenarioCount = 0;
-            private int tupleCount = 0;
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 if (dir.toString().endsWith(".java")) {
-                    logger.info("scenario count : {}", scenarioCount++);
                     File[] fs = dir.toFile().listFiles();
                     File base = null, a = null, b = null, truth = null;
                     for (var f : fs) {
@@ -224,7 +230,6 @@ public class GitService {
                     }
                     if (base != null && a != null && b != null && truth != null) {
                         {
-                            logger.info("tuple count : {}", tupleCount++);
                             File conflict = new File(dir.toString(), "conflict.java");
                             if(conflict.exists()) conflict.delete();
                             Files.copy(a.toPath(), conflict.toPath());
