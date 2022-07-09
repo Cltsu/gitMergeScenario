@@ -37,8 +37,8 @@ public class Client {
             String outputJsonPath = output + "\\" + "mergeTuples" + "\\" + project + ".json";
             try {
                 collectGitConflicts(path, project, url, outputConflictFiles);
-                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
-                mergeTuplesAnalysis(outputJsonPath);
+//                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
+//                mergeTuplesAnalysis(outputJsonPath);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -48,13 +48,8 @@ public class Client {
 
 
     public static void collectGitConflicts(String projectPath, String projectName, String url, String output) throws Exception {
-        GitService gs = new GitService();
-        Repository repo = gs.CloneIfNotExist(projectPath,url);
-        List<RevCommit> commits = gs.collectMergeCommits(repo);
-        for(RevCommit c : commits){
-            gs.mergeAndGetConflictFiles(c, repo, projectName, projectPath, output);
-            gs.threeWayMergeFile(output);
-        }
+        GitService gitService = new GitService();
+        gitService.collectAllConflicts(projectPath, projectName, url, output);
     }
 
     public static void collectMergeScenario(String outputFile, String projectName, String conflictFilesPath) throws Exception {

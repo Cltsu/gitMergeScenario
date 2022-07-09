@@ -22,9 +22,9 @@ public class MergeScenario {
 
     private static final Logger logger = LoggerFactory.getLogger(MergeScenario.class);
 
-    public MergeScenario(String fileName){
-        this.fileName = fileName;
-    }
+//    public MergeScenario(String fileName){
+//        this.fileName = fileName;
+//    }
 
     public MergeScenario(String project, String commitID, String fileName){
         this.fileName = fileName;
