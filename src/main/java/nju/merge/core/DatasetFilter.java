@@ -106,9 +106,4 @@ public class DatasetFilter {
         JSONUtils.writeTuples2Json(mixLine, project, output);
     }
 
-//    public static void main(String[] args) throws Exception{
-//        String path = "G:\\output\\tuples\\tmp.json";
-//        DatasetFilter df = new DatasetFilter(path);
-//        df.analysis();
-//    }
 }

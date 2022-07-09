@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONReader;
 import nju.merge.core.DatasetFilter;
 import nju.merge.entity.MergeTuple;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +81,11 @@ public class JSONUtils {
             array.add(tmp);
         });
         json.put("mergeTuples", array);
-        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(output));
+        File dir = new File(output);
+        if(!dir.exists()) {
+            FileUtils.forceMkdir(dir);
+        }
+        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(output + project + ".json"));
         osw.write(json.toJSONString());
         osw.flush();
         osw.close();

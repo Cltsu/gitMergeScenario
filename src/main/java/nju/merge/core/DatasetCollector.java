@@ -142,20 +142,4 @@ public class DatasetCollector {
             }
         });
     }
-
-
-//    public static void run() throws Exception {
-//        String project = "platform_packages_apps_settings";
-//        String output = "G:\\output\\tuples\\tmp.json";
-//        DatasetCollector dc = new DatasetCollector();
-//        dc.extractFromProject("G:\\output\\platform_packages_apps_settings");
-////        dc.showTuples();
-//        JSONUtils.writeTuples2Json(dc.allTuple, project, output);
-//        System.out.println(dc.allTuple.size());
-//    }
-//
-//
-//    public static void main(String[] args) throws Exception{
-//        run();
-//    }
 }

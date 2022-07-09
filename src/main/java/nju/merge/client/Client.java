@@ -33,17 +33,16 @@ public class Client {
         addSimpleRepo(repos);
         repos.forEach((project, url) -> {
             String path = gitPath + project + "\\";
-            String outputConflictFiles = output + "\\" + "conflictFiles";
-            String outputJsonPath = output + "\\" + "mergeTuples" + "\\" + project + ".json";
+            String outputConflictFiles = output + "\\" + "conflictFiles\\";
+            String outputJsonPath = output + "\\" + "mergeTuples" + "\\";
             try {
                 collectGitConflicts(path, project, url, outputConflictFiles);
-//                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
-//                mergeTuplesAnalysis(outputJsonPath);
+                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
+                mergeTuplesAnalysis(outputJsonPath + project + ".json");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-
     }
 
 

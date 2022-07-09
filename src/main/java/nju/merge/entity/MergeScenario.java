@@ -13,7 +13,6 @@ public class MergeScenario {
     public byte[] base;
     public byte[] ours;
     public byte[] theirs;
-    public byte[] conflicting;
     public byte[] truth;
 
     public String fileName;
