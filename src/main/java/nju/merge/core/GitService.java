@@ -210,12 +210,7 @@ public class GitService {
     }
 
     private byte[] getFileBytes(String path) throws IOException {
-        // TODO necessary？
-        if(File.separator.equals("/")){
-            path = path.replace('\\','/');
-        }else{
-            path = path.replace('/','\\');
-        }
+        path = PathUtil.getSystemCompatiblePath(path);
 
         File file = new File(path);
         if(file.exists()) {
