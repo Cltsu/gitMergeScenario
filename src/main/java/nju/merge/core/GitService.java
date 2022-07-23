@@ -11,11 +11,13 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
+import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -131,40 +133,52 @@ public class GitService {
         RevCommit p1 = cms.ours;
         RevCommit p2 = cms.theirs;
         logger.info("collecting scenario in merged commit {}", merged.getName());
-        checkout2(merged);
-        scenarioMap.forEach((file, scenario) ->{
+        scenarioMap.forEach((file, scenario) -> {
             try {
-                scenario.truth = getFileBytes(projectPath + file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        checkout2(p1);
-        scenarioMap.forEach((file, scenario) ->{
-            try {
-                scenario.ours = getFileBytes(projectPath + file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        checkout2(p2);
-        scenarioMap.forEach((file, scenario) ->{
-            try {
-                scenario.theirs = getFileBytes(projectPath + file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        if(isBaseExist(base)) {
-            checkout2(base);
-            scenarioMap.forEach((file, scenario) -> {
-                try {
-                    scenario.base = getFileBytes(projectPath + file);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                scenario.truth = getFileWithCommitAndPath(file, merged);
+                scenario.ours = getFileWithCommitAndPath(file, p1);
+                scenario.theirs = getFileWithCommitAndPath(file, p2);
+                if(isBaseExist(base)){
+                    scenario.base = getFileWithCommitAndPath(file, base);
                 }
-            });
-        }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+//        checkout2(merged);
+//        scenarioMap.forEach((file, scenario) ->{
+//            try {
+//                scenario.truth = getFileBytes(projectPath + file);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        checkout2(p1);
+//        scenarioMap.forEach((file, scenario) ->{
+//            try {
+//                scenario.ours = getFileBytes(projectPath + file);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        checkout2(p2);
+//        scenarioMap.forEach((file, scenario) ->{
+//            try {
+//                scenario.theirs = getFileBytes(projectPath + file);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        if(isBaseExist(base)) {
+//            checkout2(base);
+//            scenarioMap.forEach((file, scenario) -> {
+//                try {
+//                    scenario.base = getFileBytes(projectPath + file);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//        }
         scenarioMap.forEach((f, s)-> {
             try {
                 s.write2folder(conflictOutput);
@@ -200,6 +214,29 @@ public class GitService {
             return false;
         }
         return true;
+    }
+
+    private byte[] getFileWithCommitAndPath(String filePath, RevCommit commit) throws IOException {
+//        Node root = getNode();
+//        String revisionID = getVersionName();
+//        System.out.println("Commit ID is  "+revisionID);
+//
+//        Repository repository = git.getRepository();
+//        RevWalk walk = new RevWalk(repository);
+//        walk.reset();
+//        ObjectId id = repository.resolve(revisionID);
+//        RevCommit commit = walk.parseCommit(id);
+//        System.out.println("Found Commit again: " + commit);
+//
+//        walk.dispose();
+//        String fileName = root.getIdentifier() + ".yaml";
+//        TreeWalk treeWalk  = TreeWalk.forPath( repository, fileName, commit.getTree() );
+//        InputStream yamlFile = repository.open( treeWalk.getObjectId( 0 ), Constants.OBJ_BLOB ).openStream();
+//        treeWalk.close();
+        TreeWalk treeWalk = TreeWalk.forPath(this.repo, filePath, commit.getTree());
+        if(treeWalk == null) return null;
+        ObjectLoader objectLoader = this.repo.open(treeWalk.getObjectId(0));
+        return objectLoader.getBytes();
     }
 
     private byte[] getFileBytes(String path) throws IOException {

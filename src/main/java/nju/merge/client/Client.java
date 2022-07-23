@@ -21,6 +21,7 @@ public class Client {
 
     public static void addSimpleRepo(Map<String, String> repos){
         repos.put("junit4","https://github.com/junit-team/junit4.git");
+//        repos.put("spring-boot","");
     }
 
     public static void addReposFromText(String txtPath, Map<String, String> repos){
@@ -37,9 +38,9 @@ public class Client {
             String outputJsonPath = output + "\\" + "mergeTuples" + "\\";
             try {
                 logger.info("--------------------------collect conflict files----------------------------------");
-                collectGitConflicts(path, project, url, outputConflictFiles);
+//                collectGitConflicts(path, project, url, outputConflictFiles);
                 logger.info("--------------------------collect merge tuples----------------------------------");
-                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
+//                collectMergeScenario(outputJsonPath, project, outputConflictFiles);
                 logger.info("--------------------------merge tuples analysis----------------------------------");
                 mergeTuplesAnalysis(outputJsonPath + project + ".json");
             } catch (Exception e) {
