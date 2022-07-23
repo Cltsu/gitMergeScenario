@@ -97,10 +97,14 @@ public class DatasetFilter {
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).toList();
         List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).toList();
+        logger.info("Accept one side : {} ", acceptOneSide.size());
+        logger.info("Lack of resolution : {} ", lackOfR.size());
+
 
 
         this.tuples = this.tuples.stream().filter(DatasetFilter::filterIncompleteTuple).toList();
-
+        logger.info("Filter incomplete tuples");
+        logger.info("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).toList();
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).toList();
@@ -111,13 +115,11 @@ public class DatasetFilter {
         saveTuple2Json(mixLine, "mix");
         saveTuple2Json(outofVoca, "out");
         saveTuple2Json(lackOfR, "lackOfResolution");
-        logger.info("Complete tuples : {}", this.tuples.size());
-        logger.info("Accept one side : {} ", acceptOneSide.size());
-        logger.info("Lack of resolution : {} ", lackOfR.size());
+
+
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outofVoca.size());
         JSONUtils.writeTuples2Json(mixLine, project, output);
     }
-
 }
