@@ -44,19 +44,20 @@ public class GitService {
         Repository repo;
         if(gitFolder.exists()) {
             logger.info("git repo {} is found...........", path);
-            FileRepositoryBuilder builder = new FileRepositoryBuilder();
-            repo = builder.setGitDir(new File(gitFolder, ".git"))
-                    .readEnvironment()
-                    .findGitDir()
-                    .build();
         } else{
-            logger.info("downloading git repo from {}...........", url);
-            Git git = Git.cloneRepository()
-                    .setGitDir(gitFolder)
-                    .setURI(url)
-                    .call();
-            repo = git.getRepository();
+            logger.info("git clone {} {}", url, projectPath);
+            ProcessBuilder pb = new ProcessBuilder(
+                    "git",
+                    "clone",
+                    url,
+                    projectPath);
+            pb.start().waitFor();
         }
+        FileRepositoryBuilder builder = new FileRepositoryBuilder();
+        repo = builder.setGitDir(new File(gitFolder, ".git"))
+                .readEnvironment()
+                .findGitDir()
+                .build();
         return repo;
     }
 

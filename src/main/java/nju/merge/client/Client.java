@@ -11,22 +11,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Client {
 
-//    private static final String output = "content/merge/output/";
-//    private static final String gitPath = "content/merge/gitRepos";
-//    private static final String repoList = "content/list";
+    private static final String output = "/content/merge/output/";
+    private static final String gitPath = "/content/merge/gitRepos/";
+    private static final String repoList = "/content/list";
 
-    private static final String output = "G:/merge/output/";
-    private static final String gitPath = "G:/merge/gitRepos/";
-    private static final String repoList = "G:/merge/list.txt";
+//    private static final String output = "G:/merge/output/";
+//    private static final String gitPath = "G:/merge/gitRepos/";
+//    private static final String repoList = "G:/merge/list.txt";
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addSimpleRepo(Map<String, String> repos){

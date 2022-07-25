@@ -15,6 +15,7 @@ import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class JSONUtils {
@@ -92,7 +93,7 @@ public class JSONUtils {
     }
 
     private static List<String> removeBlankLine(List<String> lines){
-        return lines.stream().filter(line -> !"".equals(line)).toList();
+        return lines.stream().filter(line -> !"".equals(line)).collect(Collectors.toList());
     }
 
 
