@@ -54,11 +54,14 @@ public class GitService {
             Git git = Git.cloneRepository()
                     .setGitDir(gitFolder)
                     .setURI(url)
-                    .setCloneAllBranches(true)
                     .call();
             repo = git.getRepository();
         }
         return repo;
+    }
+
+    public void deleteRepo() throws IOException {
+
     }
 
     public void collectAllConflicts(String projectPath, String projectName, String url, String output) throws Exception{
@@ -174,7 +177,6 @@ public class GitService {
     }
 
     private byte[] getFileBytes(String path) throws IOException {
-        path = path.replace('/','\\');
         File file = new File(path);
         if(file.exists()) {
             Path curPath = Paths.get(path);
@@ -240,23 +242,4 @@ public class GitService {
         });
     }
 
-//
-//    public static void run() throws Exception {
-//        String gitPath = "G:\\merge\\gitRepos\\";
-//        String output = "G:\\merge\\output\\";
-//        String project = "junit4";
-//        String path = gitPath + project + "\\";
-//        GitService gs = new GitService();
-//        Repository repo = gs.CloneIfNotExist(path,"");
-//
-//        List<RevCommit> commits = gs.collectMergeCommits(repo);
-//        Map<String, MergeScenario> map = new HashMap<>();
-//        for(RevCommit c : commits){
-//            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
-//        }
-//    }
-//
-//    public static void main(String[] args) throws Exception{
-//        run();
-//    }
 }
