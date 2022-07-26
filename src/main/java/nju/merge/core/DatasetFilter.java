@@ -1,23 +1,14 @@
 package nju.merge.core;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.JSONReader;
 import nju.merge.IO.JSONUtils;
-import nju.merge.entity.MergeScenario;
+import nju.merge.IO.PathUtil;
 import nju.merge.entity.MergeTuple;
-import org.eclipse.jgit.api.MergeCommand;
-import org.eclipse.jgit.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static nju.merge.IO.JSONUtils.loadTuplesFromJson;
 
@@ -92,7 +83,7 @@ public class DatasetFilter {
 
     public void analysis() throws Exception {
         String project = "platform_packages_apps_settings";
-        String output = "G:\\output\\tuples\\mixlines.json";
+        String output = PathUtil.getFileWithPathSegment("./output", "tuples", "mixlines.json");
         logger.info("Total tuples : {}", this.tuples.size());
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).toList();

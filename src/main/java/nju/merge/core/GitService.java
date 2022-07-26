@@ -1,12 +1,17 @@
 package nju.merge.core;
 
+import nju.merge.IO.PathUtil;
 import nju.merge.entity.CommitMergeScenario;
 import nju.merge.entity.MergeScenario;
-import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.merge.*;
+import org.eclipse.jgit.lib.AnyObjectId;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.merge.MergeStrategy;
+import org.eclipse.jgit.merge.RecursiveMerger;
+import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -20,7 +25,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GitService {
 
@@ -31,7 +39,7 @@ public class GitService {
 
     private Repository repo;
 
-    public GitService(){};
+    public GitService(){}
     public GitService(String projectName, String projectPath, String conflictOutput){
         this.conflictOutput = conflictOutput;
         this.projectPath = projectPath;
@@ -174,7 +182,8 @@ public class GitService {
     }
 
     private byte[] getFileBytes(String path) throws IOException {
-        path = path.replace('/','\\');
+        path = PathUtil.getSystemCompatiblePath(path);
+
         File file = new File(path);
         if(file.exists()) {
             Path curPath = Paths.get(path);
@@ -224,17 +233,17 @@ public class GitService {
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            public FileVisitResult visitFileFailed(Path file, IOException exc) {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                 return FileVisitResult.CONTINUE;
             }
         });

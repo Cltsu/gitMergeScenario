@@ -3,7 +3,6 @@ package nju.merge.IO;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONReader;
-import nju.merge.core.DatasetFilter;
 import nju.merge.entity.MergeTuple;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -85,7 +84,7 @@ public class JSONUtils {
         if(!dir.exists()) {
             FileUtils.forceMkdir(dir);
         }
-        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(output + project + ".json"));
+        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(PathUtil.getFileWithPathSegment(output , project + ".json")));
         osw.write(json.toJSONString());
         osw.flush();
         osw.close();
