@@ -17,6 +17,7 @@ public class Client {
 
     public static void addSimpleRepo(Map<String, String> repos){
         repos.put("junit4","https://github.com/junit-team/junit4.git");
+//        repos.put("spring-boot","");
     }
 
     public static void addReposFromText(String txtPath, Map<String, String> repos){

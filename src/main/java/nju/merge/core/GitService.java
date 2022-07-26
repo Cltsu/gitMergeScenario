@@ -15,11 +15,14 @@ import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+
+import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -138,40 +141,18 @@ public class GitService {
         RevCommit p1 = cms.ours;
         RevCommit p2 = cms.theirs;
         logger.info("collecting scenario in merged commit {}", merged.getName());
-        checkout2(merged);
-        scenarioMap.forEach((file, scenario) ->{
+        scenarioMap.forEach((file, scenario) -> {
             try {
-                scenario.truth = getFileBytes(PathUtil.getFileWithPathSegment(projectPath, file));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        checkout2(p1);
-        scenarioMap.forEach((file, scenario) ->{
-            try {
-                scenario.ours = getFileBytes(PathUtil.getFileWithPathSegment(projectPath, file));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        checkout2(p2);
-        scenarioMap.forEach((file, scenario) ->{
-            try {
-                scenario.theirs = getFileBytes(PathUtil.getFileWithPathSegment(projectPath, file));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        if(isBaseExist(base)) {
-            checkout2(base);
-            scenarioMap.forEach((file, scenario) -> {
-                try {
-                    scenario.base = getFileBytes(PathUtil.getFileWithPathSegment(projectPath, file));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                scenario.truth = getFileWithCommitAndPath(file, merged);
+                scenario.ours = getFileWithCommitAndPath(file, p1);
+                scenario.theirs = getFileWithCommitAndPath(file, p2);
+                if(isBaseExist(base)){
+                    scenario.base = getFileWithCommitAndPath(file, base);
                 }
-            });
-        }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
         scenarioMap.forEach((f, s)-> {
             try {
                 s.write2folder(conflictOutput);
@@ -179,22 +160,6 @@ public class GitService {
                 e.printStackTrace();
             }
         });
-    }
-
-    private void checkout(RevCommit commit) throws Exception {
-        Git git = new Git(this.repo);
-        git.checkout().setName(commit.getName()).call();
-        git.close();
-    }
-
-
-    private void checkout2(RevCommit commit) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(
-                "git",
-                "checkout",
-                commit.getName());
-        pb.directory(new File(this.projectPath));
-        pb.start().waitFor();
     }
 
     private boolean isBaseExist(ObjectId id) throws IOException {
@@ -207,6 +172,13 @@ public class GitService {
             return false;
         }
         return true;
+    }
+
+    private byte[] getFileWithCommitAndPath(String filePath, RevCommit commit) throws IOException {
+        TreeWalk treeWalk = TreeWalk.forPath(this.repo, filePath, commit.getTree());
+        if(treeWalk == null) return null;
+        ObjectLoader objectLoader = this.repo.open(treeWalk.getObjectId(0));
+        return objectLoader.getBytes();
     }
 
     private byte[] getFileBytes(String path) throws IOException {

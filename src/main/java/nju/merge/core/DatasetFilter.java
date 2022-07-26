@@ -15,6 +15,8 @@ import static nju.merge.IO.JSONUtils.loadTuplesFromJson;
 public class DatasetFilter {
 
     private List<MergeTuple> tuples;
+    private String projectName;
+    private String output;
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
     public DatasetFilter(String path) throws Exception {
@@ -60,6 +62,9 @@ public class DatasetFilter {
         return false;
     }
 
+    public static boolean filterLackOfResolution(MergeTuple tuple){
+        return (tuple.r.size() == 0);
+    }
 
     private static boolean equalCodeSnippet(List<String> one, List<String> another){
         if(one.size() == another.size()){
@@ -71,8 +76,8 @@ public class DatasetFilter {
         return false;
     }
 
-    public void saveMix2Json(){
-
+    public void saveTuple2Json(List<MergeTuple> tuples, String kind) throws Exception {
+        JSONUtils.writeTuples2Json(tuples, "junit4", "G:\\merge\\output\\" + kind + "\\");
     }
 
 
@@ -82,19 +87,30 @@ public class DatasetFilter {
         logger.info("Total tuples : {}", this.tuples.size());
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).toList();
+        List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).toList();
         logger.info("Accept one side : {} ", acceptOneSide.size());
+        logger.info("Lack of resolution : {} ", lackOfR.size());
+
+
 
         this.tuples = this.tuples.stream().filter(DatasetFilter::filterIncompleteTuple).toList();
+        logger.info("Filter incomplete tuples");
         logger.info("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).toList();
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).toList();
         List<MergeTuple> outofVoca = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).toList();
 
+
+
+        saveTuple2Json(mixLine, "mix");
+        saveTuple2Json(outofVoca, "out");
+        saveTuple2Json(lackOfR, "lackOfResolution");
+
+
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outofVoca.size());
         JSONUtils.writeTuples2Json(mixLine, project, output);
     }
-
 }
