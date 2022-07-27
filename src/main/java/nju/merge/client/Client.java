@@ -19,13 +19,15 @@ import java.util.Map;
 
 public class Client {
 
-//    private static final String output = "/content/merge/output/";
-//    private static final String gitPath = "/content/merge/gitRepos/";
-//    private static final String repoList = "/content/list";
+//    private static final String output = "/content/drive/merge/output/";
+//    private static final String gitPath = "/content/gitRepos/";
+//    private static final String repoList = "/content/drive/list";
 
-    private static final String output = "G:/merge/output/";
-    private static final String gitPath = "G:/merge/gitRepos/";
-    private static final String repoList = "G:/merge/list.txt";
+    private static final String doneList = "/content/drive/done";
+
+//    private static final String output = "G:/merge/output/";
+//    private static final String gitPath = "G:/merge/gitRepos/";
+//    private static final String repoList = "G:/merge/list.txt";
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addSimpleRepo(Map<String, String> repos){
