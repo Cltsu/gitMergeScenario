@@ -61,9 +61,6 @@ public class GitService {
         return repo;
     }
 
-    public void deleteRepo() throws IOException {
-
-    }
 
     public void collectAllConflicts(String projectPath, String projectName, String url, String output) throws Exception{
         this.projectName = projectName;
