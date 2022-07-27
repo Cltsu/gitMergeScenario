@@ -22,11 +22,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Client {
 
-    private static final String output = "/content/drive/merge/output/";
+    private static final String output = "/content/drive/MyDrive/merge/output/";
     private static final String gitPath = "/content/gitRepos/";
-    private static final String repoList = "/content/drive/list";
+    private static final String repoList = "/content/drive/MyDrive/list";
 
-    private static final String doneList = "/content/drive/done";
+    private static final String doneList = "/content/drive/MyDrive/done";
 
 //    private static final String output = "G:/merge/output/";
 //    private static final String gitPath = "G:/merge/gitRepos/";
