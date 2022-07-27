@@ -13,15 +13,18 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class Client {
 
-//    private static final String output = "/content/drive/merge/output/";
-//    private static final String gitPath = "/content/gitRepos/";
-//    private static final String repoList = "/content/drive/list";
+    private static final String output = "/content/drive/merge/output/";
+    private static final String gitPath = "/content/gitRepos/";
+    private static final String repoList = "/content/drive/list";
 
     private static final String doneList = "/content/drive/done";
 
@@ -42,12 +45,14 @@ public class Client {
         });
     }
 
-
     public static void main(String[] args) throws Exception{
         Map<String, String> repos = new HashMap<>();
 //        addSimpleRepo(repos);
         addReposFromText(repoList, repos);
         repos.forEach((project, url) -> {
+            try {
+                if(questDoneRepo(project)) return;
+            } catch (Exception e){}
             String path = gitPath + project + "/";
             String outputConflictFiles = output + "/" + "conflictFiles/";
             String outputJsonPath = output + "/" + "mergeTuples" + "/";
@@ -73,11 +78,22 @@ public class Client {
                         mergeTuplesAnalysis(outputJsonPath + project + ".json");
                     }
                 }
+                recordRepo(project);
                 deleteRepo(path);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static boolean questDoneRepo(String projectName) throws IOException {
+        Path path = Paths.get(doneList);
+        List<String> doneRepos = Files.readAllLines(path);
+        return doneRepos.contains(projectName);
+    }
+
+    public static void recordRepo(String projectName) throws IOException {
+        FileUtils.writeLines(new File(doneList), Collections.singleton(projectName), true);
     }
 
     public static void deleteRepo(String repoPath) throws IOException {
