@@ -22,16 +22,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Client {
 
-//    private static final String output = "/content/drive/MyDrive/merge/output/";
-//    private static final String gitPath = "/content/gitRepos/";
-//    private static final String repoList = "/content/drive/MyDrive/merge/list";
-//
-//    private static final String doneList = "/content/drive/MyDrive/merge/done";
+    private static final String output = "/content/drive/MyDrive/merge/output/";
+    private static final String gitPath = "/content/gitRepos/";
+    private static final String repoList = "/content/drive/MyDrive/merge/list";
+    private static final String doneList = "/content/drive/MyDrive/merge/done";
 
-    private static final String output = "G:/merge/output/";
-    private static final String gitPath = "G:/merge/gitRepos/";
-    private static final String repoList = "G:/merge/list";
-    private static final String doneList = "G:/merge/done";
+//    private static final String output = "G:/merge/output/";
+//    private static final String gitPath = "G:/merge/gitRepos/";
+//    private static final String repoList = "G:/merge/list";
+//    private static final String doneList = "G:/merge/done";
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addSimpleRepo(Map<String, String> repos){
