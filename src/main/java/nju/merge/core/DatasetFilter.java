@@ -15,8 +15,6 @@ import static nju.merge.IO.JSONUtils.loadTuplesFromJson;
 public class DatasetFilter {
 
     private List<MergeTuple> tuples;
-    private String projectName;
-    private String output;
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
     public DatasetFilter(String path) throws Exception {
@@ -77,7 +75,7 @@ public class DatasetFilter {
     }
 
     public void saveTuple2Json(List<MergeTuple> tuples, String kind) throws Exception {
-        JSONUtils.writeTuples2Json(tuples, "junit4", "G:\\merge\\output\\" + kind + "\\");
+        JSONUtils.writeTuples2Json(tuples, "junit4",  PathUtil.getFileWithPathSegment("./output", kind));
     }
 
 

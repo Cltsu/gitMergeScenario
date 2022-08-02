@@ -5,24 +5,19 @@ import nju.merge.entity.CommitMergeScenario;
 import nju.merge.entity.MergeScenario;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.AnyObjectId;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.merge.RecursiveMerger;
 import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -249,23 +244,4 @@ public class GitService {
         });
     }
 
-//
-//    public static void run() throws Exception {
-//        String gitPath = "G:\\merge\\gitRepos\\";
-//        String output = "G:\\merge\\output\\";
-//        String project = "junit4";
-//        String path = gitPath + project + "\\";
-//        GitService gs = new GitService();
-//        Repository repo = gs.CloneIfNotExist(path,"");
-//
-//        List<RevCommit> commits = gs.collectMergeCommits(repo);
-//        Map<String, MergeScenario> map = new HashMap<>();
-//        for(RevCommit c : commits){
-//            gs.mergeAndGetConflictFiles(c, repo, project, path, output);
-//        }
-//    }
-//
-//    public static void main(String[] args) throws Exception{
-//        run();
-//    }
 }
