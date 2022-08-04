@@ -22,8 +22,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Client {
 
-    private static final String output = "/content/drive/MyDrive/merge/output/";
-    private static final String gitPath = "/content/gitRepos/";
+    private static final String output = "/content/merge/output/";
+    private static final String gitPath = "/content/merge/gitRepos/";
+    private static final String drivePath = "/content/drive/MyDrive/output/";
     private static final String repoList = "/content/drive/MyDrive/merge/list";
     private static final String doneList = "/content/drive/MyDrive/merge/done";
 
@@ -77,12 +78,30 @@ public class Client {
                         mergeTuplesAnalysis(outputJsonPath + project + ".json");
                     }
                 }
-                recordRepo(project);
-                deleteRepo(path);
+                tarAndMove(project, outputConflictFiles + project, path);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static void tarAndMove(String projectName, String filesPath, String projectPath) throws Exception {
+        String tarFile = projectName + ".tar.gz";
+        logger.info("tar -zcvf {} {}", output + tarFile, filesPath);
+        ProcessBuilder pb = new ProcessBuilder(
+                "tar",
+                "-zcvf",
+                output + tarFile,
+                filesPath);
+        pb.start().waitFor();
+        logger.info("mv {} {}", output + tarFile, drivePath);
+        ProcessBuilder pb2 = new ProcessBuilder(
+                "mv",
+                output + tarFile,
+                drivePath);
+        pb2.start().waitFor();
+        recordRepo(projectName);
+        deleteRepo(projectPath);
     }
 
     public static boolean questDoneRepo(String projectName) throws IOException {

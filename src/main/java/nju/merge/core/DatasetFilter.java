@@ -116,8 +116,7 @@ public class DatasetFilter {
         List<MergeTuple> outofVoca = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
 
 
-
-//        saveTuple2Json(mixLine, "mix");
+        saveTuple2Json(mixLine, "mix");
 //        saveTuple2Json(outofVoca, "out");
 //        saveTuple2Json(lackOfR, "lackOfResolution");
 
