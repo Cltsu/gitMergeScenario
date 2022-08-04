@@ -24,7 +24,7 @@ public class Client {
 
     private static final String output = "/content/merge/output/";
     private static final String gitPath = "/content/merge/gitRepos/";
-    private static final String drivePath = "/content/drive/MyDrive/output/";
+    private static final String drivePath = "/content/drive/MyDrive/merge/output/";
     private static final String repoList = "/content/drive/MyDrive/merge/list";
     private static final String doneList = "/content/drive/MyDrive/merge/done";
 
@@ -51,7 +51,10 @@ public class Client {
         addReposFromText(repoList, repos);
         repos.forEach((project, url) -> {
             try {
-                if(questDoneRepo(project)) return;
+                if(questDoneRepo(project)){
+                    logger.info("{} has been analyzed", project);
+                    return;
+                }
             } catch (Exception e){}
             String path = gitPath + project + "/";
             String outputConflictFiles = output + "/" + "conflictFiles/";
@@ -102,6 +105,7 @@ public class Client {
         pb2.start().waitFor();
         recordRepo(projectName);
         deleteRepo(projectPath);
+        deleteRepo(filesPath);
     }
 
     public static boolean questDoneRepo(String projectName) throws IOException {
