@@ -26,6 +26,8 @@ public class GitService {
     private String conflictOutput;
 
     private Repository repo;
+    private int totalCommit;
+    private int currentCommit;
 
     public GitService(){};
     public GitService(String projectName, String projectPath, String conflictOutput){
@@ -64,7 +66,10 @@ public class GitService {
         this.conflictOutput = output;
         this.repo = CloneIfNotExist(this.projectPath,url);
         List<RevCommit> commits = collectMergeCommits();
+        this.totalCommit = commits.size();
+        this.currentCommit = 0;
         for(RevCommit c : commits){
+            currentCommit++;
             mergeAndCollectConflictFiles(c);
         }
         threeWayMergeFile(conflictOutput);
@@ -91,7 +96,7 @@ public class GitService {
     private void mergeAndCollectConflictFiles(RevCommit merged) throws Exception {
         RevCommit p1 = merged.getParents()[0];
         RevCommit p2 = merged.getParents()[1];
-        logger.info("merge {} and {}, child commit {}", p1.getName(), p2.getName(), merged.getName());
+        logger.info("({}/{}) merge {} and {}, child commit {}", currentCommit, totalCommit,p1.getName(), p2.getName(), merged.getName());
         ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repo, true);
         if(!merger.merge(p1, p2)){
             RecursiveMerger rMerger = (RecursiveMerger)merger;

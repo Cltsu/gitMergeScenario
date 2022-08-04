@@ -41,6 +41,7 @@ public class Client {
         Path path = Paths.get(txtPath);
         List<String> lines = Files.readAllLines(path);
         lines.forEach(line -> {
+            if(line.equals("") || line.split(",").length == 1) return;
             repos.put(line.split(",")[0].strip(), line.split(",")[1].strip());
         });
     }
@@ -90,10 +91,10 @@ public class Client {
 
     public static void tarAndMove(String projectName, String filesPath, String projectPath) throws Exception {
         String tarFile = projectName + ".tar.gz";
-        logger.info("tar -zcvf {} {}", output + tarFile, filesPath);
+        logger.info("tar -zcf {} {}", output + tarFile, filesPath);
         ProcessBuilder pb = new ProcessBuilder(
                 "tar",
-                "-zcvf",
+                "-zcf",
                 output + tarFile,
                 filesPath);
         pb.start().waitFor();
