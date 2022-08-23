@@ -1,10 +1,10 @@
 package nju.merge.client;
 
-import nju.merge.IO.JSONUtils;
-import nju.merge.IO.PathUtil;
+import nju.merge.Utils.JSONUtils;
+import nju.merge.core.ConflictCollector;
 import nju.merge.core.DatasetCollector;
 import nju.merge.core.DatasetFilter;
-import nju.merge.core.GitService;
+//import nju.merge.core.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +13,8 @@ import java.util.Map;
 
 public class Client {
 
+    private static final String root = "/Users/zhuyihang/Desktop/";
+    private static final String output = "/Users/zhuyihang/Desktop/";
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addSimpleRepo(Map<String, String> repos){
@@ -20,47 +22,44 @@ public class Client {
 //        repos.put("spring-boot","");
     }
 
-    public static void addReposFromText(String txtPath, Map<String, String> repos){
+    public static void addReposFromText(String txtPath, Map<String, String> repos){}
 
-    }
-
-
-    public static void main(String[] args) {
-        String output = "./output";
-        String repoPath = "../repos";
+    public static void main(String[] args) throws Exception{
         Map<String, String> repos = new HashMap<>();
         addSimpleRepo(repos);
-        repos.forEach((projectName, url) -> {
-            String path = PathUtil.getFileWithPathSegment(repoPath, projectName);
-            String outputConflictFiles = PathUtil.getFileWithPathSegment(output, "conflictFiles");  // forceMkdir
-            String outputJsonPath = PathUtil.getFileWithPathSegment(output, "mergeTuples");
+
+        repos.forEach((project, url) -> {
+            String path = root + project + "/";
+            String outputConflictPath = output + "conflict/";
+            String outputJsonPath = output + "mergeTuples" + "/";
             try {
-                logger.info("--------------------------collect conflict files----------------------------------");
-                collectGitConflicts(path, projectName, url, outputConflictFiles);
-                logger.info("--------------------------collect merge tuples----------------------------------");
-                collectMergeScenario(outputJsonPath, projectName, outputConflictFiles);
-                logger.info("--------------------------merge tuples analysis----------------------------------");
-                mergeTuplesAnalysis(PathUtil.getFileWithPathSegment(outputJsonPath , projectName + ".json"));
+//                logger.info("-------------------------- Collect conflict files ----------------------------------");
+//                collectMergeConflict(path, project, url, outputConflictPath);
+//
+//                logger.info("-------------------------- Collect merge tuples ----------------------------------");
+                collectMergeTuples(outputJsonPath, project, outputConflictPath);
+
+                logger.info("-------------------------- Merge tuples analysis ----------------------------------");
+                mergeTuplesAnalysis(outputJsonPath + project + ".json");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-
-    public static void collectGitConflicts(String projectPath, String projectName, String url, String output) throws Exception {
-        GitService gitService = new GitService();
-        gitService.collectAllConflicts(projectPath, projectName, url, output);
+    public static void collectMergeConflict(String projectPath, String projectName, String url, String output) throws Exception {
+        ConflictCollector collector = new ConflictCollector(projectPath, projectName, url, output);
+        collector.process();
     }
 
-    public static void collectMergeScenario(String outputFile, String projectName, String conflictFilesPath) throws Exception {
-        DatasetCollector dc = new DatasetCollector();
-        dc.extractFromProject(conflictFilesPath);
-        JSONUtils.writeTuples2Json(dc.allTuple, projectName, outputFile);
+    public static void collectMergeTuples(String outputFile, String projectName, String conflictFilesPath) throws Exception {
+        DatasetCollector collector = new DatasetCollector();
+        collector.extractFromProject(conflictFilesPath);
+        JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputFile);
     }
 
     public static void mergeTuplesAnalysis(String jsonPath) throws Exception {
-        DatasetFilter df = new DatasetFilter(jsonPath);
-        df.analysis();
+        DatasetFilter filter = new DatasetFilter(jsonPath);
+        filter.analysis();
     }
 }
