@@ -5,16 +5,16 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MergeConflict {
+public class CommitMergeScenario {
     public RevCommit base;
-    public RevCommit resolve;
+    public RevCommit truth;
     public RevCommit ours;
     public RevCommit theirs;
 
     public String commitId;
     public List<String> conflictFiles;
 
-    public MergeConflict(){
+    public CommitMergeScenario(){
         conflictFiles = new ArrayList<>();
     }
 }
