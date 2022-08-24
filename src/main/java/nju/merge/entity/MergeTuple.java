@@ -4,24 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MergeTuple {
-
-    public int mark;
-    public List<String> ours;
-    public List<String> theirs;
-    public List<String> base;
-    public List<String> resolve;
+    public int startLine;
+    public int endLine;
+    public List<String> a;
+    public List<String> b;
+    public List<String> o;
+    public List<String> r;
 
     public String path;
+    public String commitId;
 
     public MergeTuple(){
-        this.ours = new ArrayList<>();
-        this.theirs = new ArrayList<>();
-        this.base = new ArrayList<>();
-        this.resolve = new ArrayList<>();
+        this.a = new ArrayList<>();
+        this.b = new ArrayList<>();
+        this.o = new ArrayList<>();
+        this.r = new ArrayList<>();
     }
 
-    public MergeTuple(String filePath) {
-        this();
+    public MergeTuple(String commitId, String filePath){
+        this.commitId = commitId;
         this.path = filePath;
+        this.a = new ArrayList<>();
+        this.b = new ArrayList<>();
+        this.o = new ArrayList<>();
+        this.r = new ArrayList<>();
     }
 }
