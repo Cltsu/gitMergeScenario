@@ -1,123 +1,127 @@
 package nju.merge.core;
 
+import difflib.DiffUtils;
+import difflib.Patch;
 import nju.merge.entity.MergeTuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class DatasetCollector {
+import static nju.merge.Utils.FileUtils.lineFilter;
+import static nju.merge.Utils.FileUtils.readFile;
 
-    private static final Logger logger = LoggerFactory.getLogger(DatasetCollector.class);
-    public List<MergeTuple> allTuple;
+public class DatasetCollector {
+    private static int[] rec = new int[0];
+    public List<MergeTuple> mergeTuples;
 
     public DatasetCollector(){
-        allTuple = new ArrayList<>();
+        mergeTuples = new ArrayList<>();
     }
 
-    private List<String> file2StringList(File file) throws Exception {
-        List<String> lines = new ArrayList<>();
-        InputStreamReader reader = new InputStreamReader(new FileInputStream(file));
-        BufferedReader bReader = new BufferedReader(reader);
-        String tmp = null;
-        while((tmp = bReader.readLine()) != null){
-            lines.add(tmp);
-        }
-        return lines;
-    }
+    private void alignLines(List<String> conflict, List<String> resolve){
+        int n = conflict.size();
+        int m = resolve.size();
+        if(n > rec.length)
+            rec = new int[n];
+        Arrays.fill(rec, -1);
 
-    public List<MergeTuple> extractMergeTuples(File conflict, File resolve, String commitId, String fileName) throws Exception {
-        logger.info("extract from {}", fileName);
-        List<String> conf = file2StringList(conflict);
-        List<String> res = file2StringList(resolve);
+        Patch<String> patch = DiffUtils.diff(conflict, resolve);
+        List<String> diff = DiffUtils.generateUnifiedDiff("", "", conflict, patch, Math.max(n, m));
 
-        List<MergeTuple> tuples = new ArrayList<>();
-        for(int i = 0; i < conf.size(); i ++){
-            if(conf.get(i).startsWith("<<<<<<")){
-                MergeTuple tmp = new MergeTuple(commitId, fileName);
-                int j = i, k = i;
-                tmp.startLine = j;
-                while(!conf.get(++j).startsWith("||||||"));
-                tmp.a = getCodeSnippets(conf, k, j);
-                k = j;
-                while(!conf.get(++j).startsWith("======"));
-                tmp.o = getCodeSnippets(conf, k, j);
-                k = j;
-                while(!conf.get(++j).startsWith(">>>>>>"));
-                tmp.b = getCodeSnippets(conf, k, j);
-                tmp.endLine = j;
-                tuples.add(tmp);
-                i = j;
+        for(int i = 0, j = 0, k = 3; k < diff.size(); ++k){
+            char c = diff.get(k).charAt(0);
+            if(c == '-')
+                i++;
+            else if(c == '+')
+                j++;
+            else{
+                rec[i] = j;
+                i++;
+                j++;
             }
         }
-        tuples.forEach(tuple -> {
-            List<String> prefix = getCodeSnippets(conf, -1, tuple.startLine);
-            List<String> suffix = getCodeSnippets(conf, tuple.endLine, conf.size());
-            int startLineRes = alignLine(prefix, res, true);
-            int endLineRes = alignLine(suffix, res, false);
-            tuple.r = getCodeSnippets(res, startLineRes, endLineRes);
-        });
-
-        return tuples;
     }
 
+    public List<MergeTuple> extractMergeTuples(File conflictFile, File resolveFile, String fileName) throws Exception {
+        List<String> conflict = lineFilter(readFile(conflictFile));
+        List<String> resolve = lineFilter(readFile(resolveFile));
+        List<String> copy = new ArrayList<>();
+        List<MergeTuple> tupleList = new ArrayList<>();
 
-    public int alignLine(List<String> prefix, List<String> resolve, boolean reverse){
-        if(prefix.isEmpty()){
-            return reverse ? -1 : resolve.size();
+        for (int i = 0, cnt = 0; i < conflict.size(); ++i) {
+            if (!conflict.get(i).startsWith("<<<<<<")) {
+                copy.add(conflict.get(i));
+                cnt++;
+                continue;
+            }
+
+            MergeTuple tuple = new MergeTuple(fileName);
+            tuple.mark = cnt;
+            int j = i, k = i;
+
+            while (!conflict.get(k).startsWith("||||||")) {
+                k++;
+            }
+            tuple.ours = getCodeSnippets(conflict, j, k);
+
+            j = k;
+            while(!conflict.get(k).startsWith("======")) {
+                k++;
+            }
+            tuple.base = getCodeSnippets(conflict, j, k);
+
+            j = k;
+            while(!conflict.get(k).startsWith(">>>>>>")) {
+                k++;
+            }
+            tuple.theirs = getCodeSnippets(conflict, j, k);
+
+            i = k;
+            tupleList.add(tuple);
         }
-        List<String> snippet = new ArrayList<>();
-        List<String> source = new ArrayList<>();
-        if(reverse){
-            for(int i = prefix.size() - 1; i >= 0; i--) snippet.add(prefix.get(i));
-            for(int i = resolve.size() - 1; i >= 0; i--) source.add(resolve.get(i));
-        }else{
-            snippet.addAll(prefix);
-            source.addAll(resolve);
-        }
-        int ret = 0;
-        int maxAlign = -1;
-        for(int i = 0; i < source.size(); i++){
-            if(maxAlign >= 5) break;
-            if(source.get(i).equals(snippet.get(0))){
-                int j = i, k = 0;
-                while(++j < source.size() && ++k < snippet.size() && source.get(j).equals(snippet.get(k)));
-                if(k > maxAlign){
-                    maxAlign = k;
-                    ret = i;
-                }
+
+        alignLines(copy, resolve);
+
+        for(MergeTuple tuple : tupleList){
+            int mark = tuple.mark;
+
+            if(mark > 0 && rec[mark] != -1 && rec[mark - 1] != -1){
+                tuple.resolve = resolve.subList(rec[mark - 1] + 1, rec[mark]);
             }
         }
-        if(reverse){
-            return source.size() - ret - 1;
-        }else return ret;
+        return tupleList;
     }
 
-    public List<String> getCodeSnippets(List<String> source, int start, int end){
-        if(start >= end) return new ArrayList<>();
-        return source.subList(start + 1, end);
+    public List<String> getCodeSnippets(List<String> code, int start, int end){
+        if(start >= end)
+            return new ArrayList<>();
+        return code.subList(start + 1, end);
     }
-
 
     public void extractFromProject(String dir) throws IOException {
         Path path = Paths.get(dir);
         Files.walkFileTree(path, new FileVisitor<>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 if (dir.toString().endsWith(".java")) {
-                    File[] fs = dir.toFile().listFiles();
+                    File[] files = dir.toFile().listFiles();
+                    if (files == null) return FileVisitResult.CONTINUE;
                     File conflict = null, resolve = null;
-                    for (var f : fs) {
-                        if (f.getName().equals("conflict.java")) conflict = f;
-                        else if (f.getName().equals("truth.java")) resolve = f;
+                    for (File f : files) {
+                        if (f.getName().equals("conflict.java"))
+                            conflict = f;
+                        else if (f.getName().equals("resolve.java"))
+                            resolve = f;
                     }
                     if (conflict != null && resolve != null) {
+
                         try {
-                            allTuple.addAll(extractMergeTuples(conflict, resolve, "", dir.toString()));
+                            mergeTuples.addAll(extractMergeTuples(conflict, resolve, dir.toString()));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
