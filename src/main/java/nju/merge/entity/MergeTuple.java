@@ -12,7 +12,6 @@ public class MergeTuple {
     public List<String> resolve;
 
     public String path;
-    public String commitId;
 
     public MergeTuple(){
         this.ours = new ArrayList<>();
@@ -21,9 +20,8 @@ public class MergeTuple {
         this.resolve = new ArrayList<>();
     }
 
-    public MergeTuple(String commitId, String filePath){
+    public MergeTuple(String filePath) {
         this();
-        this.commitId = commitId;
         this.path = filePath;
     }
 }

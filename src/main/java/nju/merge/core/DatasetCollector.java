@@ -3,10 +3,9 @@ package nju.merge.core;
 import difflib.DiffUtils;
 import difflib.Patch;
 import nju.merge.entity.MergeTuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -17,8 +16,6 @@ import static nju.merge.Utils.FileUtils.lineFilter;
 import static nju.merge.Utils.FileUtils.readFile;
 
 public class DatasetCollector {
-
-    private static final Logger logger = LoggerFactory.getLogger(DatasetCollector.class);
     private static int[] rec = new int[0];
     public List<MergeTuple> mergeTuples;
 
@@ -50,25 +47,24 @@ public class DatasetCollector {
         }
     }
 
-    public List<MergeTuple> extractMergeTuples(File conflictFile, File resolveFile, String commitId, String fileName) throws Exception{
-        //logger.info("Extract from {}", fileName);
+    public List<MergeTuple> extractMergeTuples(File conflictFile, File resolveFile, String fileName) throws Exception {
         List<String> conflict = lineFilter(readFile(conflictFile));
         List<String> resolve = lineFilter(readFile(resolveFile));
         List<String> copy = new ArrayList<>();
         List<MergeTuple> tupleList = new ArrayList<>();
 
-        for(int i = 0, cnt = 0; i < conflict.size(); ++i){
-            if(!conflict.get(i).startsWith("<<<<<<")){
+        for (int i = 0, cnt = 0; i < conflict.size(); ++i) {
+            if (!conflict.get(i).startsWith("<<<<<<")) {
                 copy.add(conflict.get(i));
                 cnt++;
                 continue;
             }
 
-            MergeTuple tuple = new MergeTuple(commitId, fileName);
+            MergeTuple tuple = new MergeTuple(fileName);
             tuple.mark = cnt;
             int j = i, k = i;
 
-            while(!conflict.get(k).startsWith("||||||")) {
+            while (!conflict.get(k).startsWith("||||||")) {
                 k++;
             }
             tuple.ours = getCodeSnippets(conflict, j, k);
@@ -111,19 +107,21 @@ public class DatasetCollector {
         Path path = Paths.get(dir);
         Files.walkFileTree(path, new FileVisitor<>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 if (dir.toString().endsWith(".java")) {
                     File[] files = dir.toFile().listFiles();
+                    if (files == null) return FileVisitResult.CONTINUE;
                     File conflict = null, resolve = null;
                     for (File f : files) {
-                        if(f.getName().equals("conflict.java"))
+                        if (f.getName().equals("conflict.java"))
                             conflict = f;
-                        else if(f.getName().equals("truth.java"))
+                        else if (f.getName().equals("resolve.java"))
                             resolve = f;
                     }
                     if (conflict != null && resolve != null) {
+
                         try {
-                            mergeTuples.addAll(extractMergeTuples(conflict, resolve, "", dir.toString()));
+                            mergeTuples.addAll(extractMergeTuples(conflict, resolve, dir.toString()));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -133,17 +131,17 @@ public class DatasetCollector {
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            public FileVisitResult visitFileFailed(Path file, IOException exc) {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                 return FileVisitResult.CONTINUE;
             }
         });

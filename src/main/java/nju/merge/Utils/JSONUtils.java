@@ -1,6 +1,9 @@
 package nju.merge.Utils;
 
-import com.alibaba.fastjson2.*;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONReader;
 import nju.merge.entity.MergeTuple;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -15,10 +18,6 @@ import java.util.List;
 
 public class JSONUtils {
     public static final Logger logger = LoggerFactory.getLogger(JSONUtils.class);
-
-    public static void main(String[] args) throws Exception {
-//        loadTuplesFromJson("src/main/resources/test.json");
-    }
 
     public static List<MergeTuple> loadTuplesFromJson(String path) throws Exception{
         File json = new File(path);
@@ -63,7 +62,7 @@ public class JSONUtils {
         if(!dir.exists()) {
             FileUtils.forceMkdir(dir);
         }
-        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(output + project + ".json"));
+        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(PathUtil.getFileWithPathSegment(output, project + ".json")));
         osw.write(json.toJSONString());
         osw.flush();
         osw.close();

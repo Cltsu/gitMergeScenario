@@ -1,6 +1,7 @@
 package nju.merge.core;
 
 import nju.merge.Utils.JSONUtils;
+import nju.merge.Utils.PathUtil;
 import nju.merge.entity.MergeTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,16 @@ import java.util.stream.Collectors;
 import static nju.merge.Utils.JSONUtils.loadTuplesFromJson;
 
 public class DatasetFilter {
+    private final String projectName;
+    private final String outputDir;
 
     private List<MergeTuple> tuples;
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
-    public DatasetFilter(String path) throws Exception {
+    public DatasetFilter(String path, String projectName, String outputDir) throws Exception {
         this.tuples = loadTuplesFromJson(path);
+        this.projectName = projectName;
+        this.outputDir = outputDir;
     }
 
     public static boolean filterIncompleteTuple(MergeTuple tuple){
@@ -72,13 +77,8 @@ public class DatasetFilter {
         return false;
     }
 
-    public void saveTuple2Json(List<MergeTuple> tuples, String kind) throws Exception {
-        JSONUtils.writeTuples2Json(tuples, "junit4", "/Users/zhuyihang/Desktop/output/" + kind + "/");
-    }
 
     public void analysis() throws Exception {
-        String project = "platform_packages_apps_settings";
-        String output = "/Users/zhuyihang/Desktop/output/tuples/mixlines.json";
         logger.info("Total tuples : {}", this.tuples.size());
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
@@ -86,24 +86,20 @@ public class DatasetFilter {
         logger.info("Accept one side : {} ", acceptOneSide.size());
         logger.info("Lack of resolution : {} ", lackOfR.size());
 
-
-
+        // 要求有ours, theirs, resolve(这里需要这么严格吗)
         tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
         logger.info("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
-        List<MergeTuple> outofVoca = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
+        List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
 
-
-        saveTuple2Json(mixLine, "mix");
-        saveTuple2Json(outofVoca, "out");
-        saveTuple2Json(lackOfR, "lackOfResolution");
-
+        JSONUtils.writeTuples2Json(mixLine, projectName, PathUtil.getFileWithPathSegment(outputDir, "mixLine"));
+        JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtil.getFileWithPathSegment(outputDir, "outOfVocabulary"));
+        JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtil.getFileWithPathSegment(outputDir, "lackOfResolution"));
 
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
-        logger.info("Out of vocabulary : {} ", outofVoca.size());
-        JSONUtils.writeTuples2Json(mixLine, project, output);
+        logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
     }
 }

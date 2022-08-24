@@ -2,11 +2,14 @@ package nju.merge.core;
 
 import nju.merge.entity.MergeConflict;
 import nju.merge.entity.MergeScenario;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.merge.*;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.merge.MergeStrategy;
+import org.eclipse.jgit.merge.RecursiveMerger;
+import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,14 +18,17 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ConflictCollector {
     private static final Logger logger = LoggerFactory.getLogger(GitService.class);
-    private String projectName;
-    private String projectPath;
-    private String URL;
-    private String output;
+    private final String projectName;
+    private final String projectPath;
+    private final String URL;
+    private final String output;
     private Repository repository;
 
     public ConflictCollector(String projectPath, String projectName, String url, String output) {
@@ -32,6 +38,10 @@ public class ConflictCollector {
         this.output = output;
     }
 
+    /**
+     * Get base, ours, theirs, truth and conflict versions of all java source files with conflicts.
+     * Conflict files contain conflict blocks.
+     */
     public void process() throws Exception {
         GitService service = new GitService();
         repository = service.cloneIfNotExist(this.projectPath, URL);
@@ -53,7 +63,6 @@ public class ConflictCollector {
     private void mergeAndGetConflict(RevCommit resolve, List<MergeConflict> conflictList) throws Exception {
         RevCommit ours = resolve.getParents()[0];
         RevCommit theirs = resolve.getParents()[1];
-        //logger.info("Merging {} and {}, child commit {}", ours.getName(), theirs.getName(), resolve.getName());
 
         ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repository, true);
 
@@ -65,7 +74,6 @@ public class ConflictCollector {
 
             rMerger.getMergeResults().forEach((file, result) -> {
                 if (file.endsWith(".java") && result.containsConflicts()) {
-                    //logger.info("Conflicts found in {}", file);
                     conflict.conflictFiles.add(file);
                 }
             });
@@ -145,22 +153,31 @@ public class ConflictCollector {
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 if (dir.toString().endsWith(".java")) {
                     File[] files = dir.toFile().listFiles();
+                    if (files == null) return FileVisitResult.CONTINUE;
                     File base = null, ours = null, theirs = null, resolve = null;
                     for (File f : files) {
                         String name = f.getName();
-                        if(name.equals("base.java"))
-                            base = f;
-                        else if(name.equals("ours.java"))
-                            ours = f;
-                        else if(name.equals("theirs.java"))
-                            theirs = f;
-                        else if(name.equals("resolve.java"))
-                            resolve = f;
+                        switch (name) {
+                            case "base.java":
+                                base = f;
+                                break;
+                            case "ours.java":
+                                ours = f;
+                                break;
+                            case "theirs.java":
+                                theirs = f;
+                                break;
+                            case "resolve.java":
+                                resolve = f;
+                                break;
+                        }
                     }
                     if (base != null && ours != null && theirs != null && resolve != null) {
                         File conflict = new File(dir.toString(), "conflict.java");
                         if (conflict.exists())
-                            conflict.delete();
+                            if (!conflict.delete()) {
+                                logger.warn("file failed to be deleted");
+                            }
 
                         Files.copy(ours.toPath(), conflict.toPath());
 

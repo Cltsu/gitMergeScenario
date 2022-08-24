@@ -1,7 +1,6 @@
 package nju.merge.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nju.merge.Utils.PathUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,7 +19,7 @@ public class MergeScenario {
     public String project;
     public String commitID;
 
-    private static final Logger logger = LoggerFactory.getLogger(MergeScenario.class);
+    //    private static final Logger logger = LoggerFactory.getLogger(MergeScenario.class);
 
     public MergeScenario(String project, String commitID, String fileName){
         this.fileName = fileName;
@@ -29,24 +28,26 @@ public class MergeScenario {
     }
 
     public void write2folder(String path) throws Exception {
-        String absPath = path + project + "/" + commitID + "/" + fileName + "/";
+        String absPath = PathUtil.getFileWithPathSegment(path, project, commitID, fileName);
         Path p = Paths.get(absPath);
         Files.createDirectories(p);
 
-        logger.info("Writing files to path: {}", absPath);
+        //        logger.info("Writing files to path: {}", absPath);
 
-        write(absPath + "base.java", this.base);
-        write(absPath + "ours.java", this.ours);
-        write(absPath + "theirs.java", this.theirs);
-        write(absPath + "resolve.java", this.resolve);
+        write(PathUtil.getFileWithPathSegment(absPath, "base.java"), this.base);
+        write(PathUtil.getFileWithPathSegment(absPath, "ours.java"), this.ours);
+        write(PathUtil.getFileWithPathSegment(absPath, "theirs.java"), this.theirs);
+        write(PathUtil.getFileWithPathSegment(absPath, "resolve.java"), this.resolve);
     }
 
     private void write(String path, byte[] bytes) throws Exception {
-        if(bytes == null)
+        if (bytes == null)
             return;
         File file = new File(path);
-        if(file.exists()){
-            file.delete();
+        if (file.exists()) {
+            if (!file.delete()) {
+                throw new Exception("file failed to be deleted");
+            }
         }
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(bytes, 0, bytes.length);
