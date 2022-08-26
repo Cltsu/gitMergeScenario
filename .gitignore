@@ -1,2 +1,9 @@
-.idea
-target
+/list.txt
+/.idea/
+/target/
+/output/
+/repos/
+/logs/
+/gitMergeScenario.iml
+# MacOS
+.DS_Store

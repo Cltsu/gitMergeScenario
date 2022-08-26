@@ -1,85 +1,78 @@
 package nju.merge.core;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.JSONReader;
-import nju.merge.IO.JSONUtils;
-import nju.merge.entity.MergeScenario;
 import nju.merge.entity.MergeTuple;
-import org.eclipse.jgit.api.MergeCommand;
-import org.eclipse.jgit.util.FileUtils;
+import nju.merge.utils.JSONUtils;
+import nju.merge.utils.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static nju.merge.IO.JSONUtils.loadTuplesFromJson;
+import static nju.merge.utils.JSONUtils.loadTuplesFromJson;
 
 public class DatasetFilter {
+    private final String projectName;
+    private final String outputDir;
 
     private List<MergeTuple> tuples;
-    private String projectName;
-    private String output;
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
-    public DatasetFilter(String path) throws Exception {
+    public DatasetFilter(String path, String projectName, String outputDir) throws Exception {
         this.tuples = loadTuplesFromJson(path);
+        this.projectName = projectName;
+        this.outputDir = outputDir;
     }
-
-    public DatasetFilter(String path, String output) throws Exception {
-        this.output = output;
-        String[] splits = path.split("/");
-        this.projectName = splits[splits.length - 1];
-        this.tuples = loadTuplesFromJson(path);
-    }
-
 
     public static boolean filterIncompleteTuple(MergeTuple tuple){
-        return !(tuple.r.size() == 0 || tuple.a.size() == 0 || tuple.b.size() == 0);
+        return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0);
     }
 
     public static boolean filterAcceptOneSide(MergeTuple tuple){
-        return equalCodeSnippet(tuple.r, tuple.a) || equalCodeSnippet(tuple.r, tuple.b) || equalCodeSnippet(tuple.r, tuple.o);
+        return tuple.resolve.equals(tuple.ours) || tuple.resolve.equals(tuple.theirs) || tuple.resolve.equals(tuple.base);
     }
 
 
     public static boolean filterConcat(MergeTuple tuple){
-        if(tuple.a.size() == 0 || tuple.b.size() == 0) return false;
-        if(tuple.r.size() == tuple.a.size() + tuple.b.size()){
-            return equalCodeSnippet(tuple.r.subList(0, tuple.a.size()), tuple.a) &&
-                    equalCodeSnippet(tuple.r.subList(tuple.a.size(), tuple.r.size()), tuple.b)
-                    ||
-                    equalCodeSnippet(tuple.r.subList(0, tuple.b.size()), tuple.b) &&
-                            equalCodeSnippet(tuple.r.subList(tuple.b.size(), tuple.r.size()), tuple.a);
+        List<String> ours = new ArrayList<>(tuple.ours);
+        List<String> theirs = new ArrayList<>(tuple.theirs);
+
+        if(ours.size() == 0 || theirs.size() == 0)
+            return false;
+
+        List<String> resolve = tuple.resolve;
+        if(resolve.size() == ours.size() + theirs.size()){
+            List<String> copy = new ArrayList<>(ours);
+            ours.addAll(theirs);
+            theirs.addAll(copy);
+            if(resolve.equals(ours) || resolve.equals(theirs))
+                return true;
         }
         return false;
     }
 
 
     public static boolean filterMixLine(MergeTuple tuple){
-        return !(tuple.r.size() == 0 || filterAcceptOneSide(tuple) || filterConcat(tuple) || filterOutOfVocabularyLine(tuple));
+        return !(tuple.resolve.size() == 0 || filterAcceptOneSide(tuple) || filterConcat(tuple) || filterOutOfVocabularyLine(tuple));
     }
 
-
     public static boolean filterOutOfVocabularyLine(MergeTuple tuple){
-        Set<String> uniqueLines = new HashSet<>();
-        uniqueLines.addAll(tuple.a);
-        uniqueLines.addAll(tuple.b);
-        uniqueLines.addAll(tuple.o);
-        for(var s : tuple.r){
-            if(!uniqueLines.contains(s)) return true;
+        Set<String> rec = new HashSet<>();
+        rec.addAll(tuple.ours);
+        rec.addAll(tuple.theirs);
+        rec.addAll(tuple.base);
+        for(var s : tuple.resolve){
+            if(!rec.contains(s))
+                return true;
         }
         return false;
     }
 
     public static boolean filterLackOfResolution(MergeTuple tuple){
-        return (tuple.r.size() == 0);
+        return tuple.resolve.size() == 0;
     }
 
     private static boolean equalCodeSnippet(List<String> one, List<String> another){
@@ -92,10 +85,6 @@ public class DatasetFilter {
         return false;
     }
 
-    public void saveTuple2Json(List<MergeTuple> tuples, String kind) throws Exception {
-        JSONUtils.writeTuples2Json(tuples, this.projectName, this.output + kind + "/");
-    }
-
 
     public void analysis() throws Exception {
         logger.info("Total tuples : {}", this.tuples.size());
@@ -105,25 +94,20 @@ public class DatasetFilter {
         logger.info("Accept one side : {} ", acceptOneSide.size());
         logger.info("Lack of resolution : {} ", lackOfR.size());
 
-
-
-        this.tuples = this.tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
-        logger.info("Filter incomplete tuples");
+        // 要求有ours, theirs, resolve(这里需要这么严格吗)
+        tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
         logger.info("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
-        List<MergeTuple> outofVoca = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
+        List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
 
-
-
-//        saveTuple2Json(mixLine, "mix");
-//        saveTuple2Json(outofVoca, "out");
-//        saveTuple2Json(lackOfR, "lackOfResolution");
-
+        JSONUtils.writeTuples2Json(mixLine, projectName, PathUtils.getFileWithPathSegment(outputDir, "mixLine"));
+        JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
+        JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtils.getFileWithPathSegment(outputDir, "lackOfResolution"));
 
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
-        logger.info("Out of vocabulary : {} ", outofVoca.size());
+        logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
     }
 }

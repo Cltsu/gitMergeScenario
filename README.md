@@ -14,3 +14,32 @@ jgit的clone指令由于国内的网络问题，可能会出错，需要先手�
 统计结果输出到标准输出中，如：
 
 <img width="435" alt="image" src="https://user-images.githubusercontent.com/61650772/178206331-3eb4b3ca-4567-42d8-8387-21c96a6bd8ef.png">
+
+### 输入
+* 项目根目录下 `list.txt` 以逗号分隔，以项目名称和链接表示需要分析的仓库信息；
+```
+# 示例
+junit4,tmpurl
+spring-boot,tmp
+```
+* 项目根目录下 `repos` 目录存放实际仓库；
+```
+repos
+├── junit4
+└── spring-boot
+```
+### 输出
+* 项目根目录下 `output` 记录数据集收集结果；
+```
+output
+├── conflictFiles           # 收集的包括冲突的文件（conflict.java 包含冲突块）
+│   ├── junit4
+│   └── spring-boot
+├── filteredTuples          # 经过过滤的 merge tuples
+│   ├── lackOfResolution    # 缺少resolution
+│   ├── mixLine             # 行混合
+│   └── outOfVocabulary     # 有新添加语句
+└── mergeTuples             # 所有merge tuples
+    ├── junit4.json
+    └── spring-boot.json
+```
