@@ -15,18 +15,8 @@ import java.util.List;
 public class GitService {
 
     private static final Logger logger = LoggerFactory.getLogger(GitService.class);
-    private String projectName;
-    private String projectPath;
-    private String conflictOutput;
 
-    private Repository repo;
-
-    public GitService(){};
-    public GitService(String projectName, String projectPath, String conflictOutput){
-        this.conflictOutput = conflictOutput;
-        this.projectPath = projectPath;
-        this.projectName = projectName;
-    }
+    public GitService(){}
 
     public Repository cloneIfNotExist(String path, String url) throws Exception {
         File gitFolder = new File(path);
@@ -34,12 +24,12 @@ public class GitService {
         if(gitFolder.exists()) {
             logger.info("git repo {} is found...........", path);
         } else{
-            logger.info("git clone {} {}", url, projectPath);
+            logger.info("git cloning to {} from {} ...... ", path, url);
             ProcessBuilder pb = new ProcessBuilder(
                     "git",
                     "clone",
                     url,
-                    projectPath);
+                    path);
             pb.start().waitFor();
         }
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
