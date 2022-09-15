@@ -27,6 +27,10 @@ public class DatasetFilter {
         this.outputDir = outputDir;
     }
 
+    public static boolean defaultFilter(MergeTuple tuple){
+        return filterIncompleteTuple(tuple) && !filterAcceptOneSide(tuple);
+    }
+
     public static boolean filterIncompleteTuple(MergeTuple tuple){
         return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0);
     }
@@ -109,5 +113,11 @@ public class DatasetFilter {
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
+    }
+
+    public void analysisDefault() throws Exception {
+        List<MergeTuple> defaultTuples = this.tuples.stream().filter(DatasetFilter::defaultFilter).collect(Collectors.toList());
+        JSONUtils.writeTuples2Json(defaultTuples, projectName, PathUtils.getFileWithPathSegment(outputDir, "defaultFilter"));
+        logger.info("tuples : {}", defaultTuples.size());
     }
 }

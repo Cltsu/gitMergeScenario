@@ -20,9 +20,10 @@ import java.util.Map;
 
 public class Client {
 
-    private static final String reposDir = "./repos";   // store all the repos
-    private static final String outputDir = "./output";
-    private static final String repoList = "./list.txt";
+    private static final String workdir = "G:/merge";
+    private static final String reposDir = workdir + "/repos";   // store all the repos
+    private static final String outputDir = workdir + "/output";
+    private static final String repoList = workdir + "/list.txt";
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void addReposFromText(String txtPath, Map<String, String> repos) throws IOException {
@@ -92,6 +93,7 @@ public class Client {
 
     public static void mergeTuplesAnalysis(String jsonPath, String projectName, String outputDir) throws Exception {
         DatasetFilter filter = new DatasetFilter(jsonPath, projectName, outputDir);
-        filter.analysis();
+//        filter.analysis();
+        filter.analysisDefault();
     }
 }
