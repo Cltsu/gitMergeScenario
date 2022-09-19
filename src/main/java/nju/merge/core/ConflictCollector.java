@@ -131,11 +131,9 @@ public class ConflictCollector {
     private boolean isBaseExist(ObjectId id) {
         RevWalk walk = new RevWalk(repository);
         try {
-
             walk.parseAny(id);
         } catch (MissingObjectException e) {
             logger.info("Base not found in {}", id.getName());
-            e.printStackTrace();
             return false;
         } catch (IOException e) {
             logger.warn("A pack file or loose object could not be read!");

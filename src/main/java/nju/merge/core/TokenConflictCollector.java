@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class TokenConflictCollector {
      * @Param
      * @Return
      **/
-    public List<TokenConflict> collectTokenConflict() throws Exception{
+    public List<TokenConflict> collectTokenConflict() {
         List<TokenConflict> tokenConflicts = new ArrayList<>();
         tuples.forEach(t -> {
             try {
@@ -55,11 +54,13 @@ public class TokenConflictCollector {
     }
 
     /**
-     * @Description 对line-level conflict tokenize然后做token-level merge(diff3)
+     * 对line-level conflict tokenize然后做token-level merge(diff3)
+     *
      * @Param 读取JSON文件得到的tuples list
      * @Return
      **/
     public List<TokenConflict> tokenDiff(MergeTuple tuple) throws IOException {
+
         String A = flattenRegion(tuple.ours);
         String B = flattenRegion(tuple.theirs);
         String O = flattenRegion(tuple.base);
@@ -100,12 +101,12 @@ public class TokenConflictCollector {
         return tokenConf;
     }
 
-    private void showMergedFile(List<String> tokens, List<TokenConflict> tokenConf, String path){
+    private void showMergedFile(List<String> tokens, List<TokenConflict> tokenConf, String path) {
         System.out.println(path);
         tokens.replaceAll(token -> token.equals(TokenConflictCollector.newLine) ? "\n" : token);
         System.out.println("Merged file:");
         tokens.forEach(token -> {
-            if(token.startsWith(">>>") || token.startsWith("===") || token.startsWith("<<<") || token.startsWith("|||")){
+            if (token.startsWith(">>>") || token.startsWith("===") || token.startsWith("<<<") || token.startsWith("|||")) {
                 System.out.print("\n" + token + "\n");
             } else {
                 System.out.print(token + " ");
@@ -121,25 +122,27 @@ public class TokenConflictCollector {
     }
 
     /**
-     * @Description token merge之后的文件可能含有多个token-level conflict，将它们切分为独立的token-level conflict
-     * @Param token merged之后的文件读取为token list
-     * @Return 切分之后的list of token-level conflict
+     * token merge之后的文件可能含有多个token-level conflict，将它们切分为独立的token-level conflict
+     *
+     * @param rToken resolved后的所有内容的token
+     * @param merged token转化为行merge后带有冲突的token
+     * @return 切分之后的list of token-level conflict
      **/
-    private List<TokenConflict> splitTokenConflict(List<String> merged, List<String> rToken){
+    private List<TokenConflict> splitTokenConflict(List<String> merged, List<String> rToken) {
         int start = 0, a = -1, o = -1, b = -1, confEnd = -1, end = 0;
         List<TokenConflict> tcList = new ArrayList<>();
-        while(end < merged.size()){
-            while(end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
-            if(end >= merged.size()) break;
+        while (end < merged.size()) {
+            while (end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
+            if (end >= merged.size()) break;
             a = end;
-            while(!merged.get(end).startsWith("|||")) end++;
+            while (!merged.get(end).startsWith("|||")) end++;
             o = end;
-            while(!merged.get(end).startsWith("===")) end++;
+            while (!merged.get(end).startsWith("===")) end++;
             b = end;
-            while(!merged.get(end).startsWith(">>>")) end++;
+            while (!merged.get(end).startsWith(">>>")) end++;
             confEnd = end;
-            while(end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
-            
+            while (end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
+
             TokenConflict tc = new TokenConflict(
                     merged.subList(start, a),
                     merged.subList(confEnd + 1, end),
@@ -148,21 +151,15 @@ public class TokenConflictCollector {
                     merged.subList(b + 1, confEnd),
                     rToken);
             tcList.add(tc);
-            
+
             start = confEnd + 1;
         }
         return tcList;
     }
 
-    
-    private String flattenRegion(List<String> region){
-        String flat = "";
-        return appendString(flat, region, 0);
-    }
 
-    private String appendString(String ret, List<String> candi, int i){
-        if(candi.size() - 1 < i) return ret;
-        return appendString(ret + " " + TokenConflictCollector.newLine + " " + candi.get(i), candi, i + 1);
+    private String flattenRegion(List<String> region) {
+        return region.stream().reduce(" ", (a, b) -> a + TokenConflictCollector.newLine + " "+ b + " ");
     }
 
     /**
@@ -171,14 +168,14 @@ public class TokenConflictCollector {
      */
     public static List<String> javaParserCodeStr(String lineStr) {
 
-        List<String> tokenList  = new ArrayList<>();
+        List<String> tokenList = new ArrayList<>();
 
         StringProvider provider = new StringProvider(lineStr);
         SimpleCharStream charStream = new SimpleCharStream(provider);
         GeneratedJavaParserTokenManager tokenGenerate = new GeneratedJavaParserTokenManager(charStream);
         String strToken = tokenGenerate.getNextToken().toString();
 
-        while (!strToken.equals("")){
+        while (!strToken.equals("")) {
             tokenList.add(strToken);
             strToken = tokenGenerate.getNextToken().toString();
         }

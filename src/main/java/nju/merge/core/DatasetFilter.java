@@ -32,7 +32,7 @@ public class DatasetFilter {
     }
 
     public static boolean filterIncompleteTuple(MergeTuple tuple){
-        return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0);
+        return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0 || tuple.base.size()==0);
     }
 
     public static boolean filterAcceptOneSide(MergeTuple tuple){
@@ -79,6 +79,10 @@ public class DatasetFilter {
         return tuple.resolve.size() == 0;
     }
 
+    public static boolean filterNoBase(MergeTuple tuple){
+        return tuple.base.size() == 0;
+    }
+
     private static boolean equalCodeSnippet(List<String> one, List<String> another){
         if(one.size() == another.size()){
             for(int i = 0; i < one.size() ; i++){
@@ -113,6 +117,10 @@ public class DatasetFilter {
         logger.info("Concat : {} ", concat.size());
         logger.info("MixLine : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
+
+        List<MergeTuple> noBase = this.tuples.stream().filter(DatasetFilter::filterNoBase).collect(Collectors.toList());
+        logger.info("no base: {}  {}%", noBase.size(), 100*(double)(noBase.size())/tuples.size());
+
     }
 
     public void analysisDefault() throws Exception {
