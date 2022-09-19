@@ -2,6 +2,7 @@ package nju.merge.core;
 
 import nju.merge.entity.ResolutionLabel;
 import nju.merge.entity.TokenConflict;
+import nju.merge.utils.PathUtils;
 
 import java.util.*;
 
@@ -15,12 +16,12 @@ public class LabelAnalysis {
     /**
      * 收集对应 jsonPath 下tuple中的 token conflict，并将收集结果写入conflict，同时静态成员 count 记录不同 resolution label数量
      *
-     * @param jsonPath 存放 line-level conflict tuple的地址
+     * @param tuplePath 存放 line-level conflict tuple的地址
      * @param output   用于存放输出（临时文件）的根目录
      */
-    public void process(String jsonPath, String output) throws Exception {
+    public void process(String tuplePath, String projectName, String output) throws Exception {
 
-        TokenConflictCollector collector = new TokenConflictCollector(jsonPath, output);
+        TokenConflictCollector collector = new TokenConflictCollector(tuplePath, projectName, output);
         List<TokenConflict> tokenConflicts = collector.collectTokenConflict();
 
         for (TokenConflict conflict : tokenConflicts) {
@@ -62,7 +63,10 @@ public class LabelAnalysis {
 
     public static void main(String[] args) throws Exception {
         LabelAnalysis labelAnalysis = new LabelAnalysis();
-        labelAnalysis.process("./output/filteredTuples/defaultFilter/spring-boot.json", "./output");
+        labelAnalysis.process(
+                PathUtils.getFileWithPathSegment("./output", "filteredTuples", "defaultFilter"),
+                "spring-boot",
+                PathUtils.getFileWithPathSegment("./output", "tokenConflicts"));
         Map<ResolutionLabel, Integer> countMap = LabelAnalysis.count;
         Set<Map.Entry<ResolutionLabel, Integer>> ms = countMap.entrySet();
         for (Map.Entry entry : ms) {

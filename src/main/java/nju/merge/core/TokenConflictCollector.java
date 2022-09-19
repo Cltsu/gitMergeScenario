@@ -5,6 +5,7 @@ import com.github.javaparser.SimpleCharStream;
 import com.github.javaparser.StringProvider;
 import nju.merge.entity.MergeTuple;
 import nju.merge.entity.TokenConflict;
+import nju.merge.utils.JSONUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static nju.merge.utils.JSONUtils.loadTuplesFromJson;
+import static nju.merge.utils.PathUtils.getFileWithPathSegment;
 
 
 public class TokenConflictCollector {
@@ -24,24 +26,29 @@ public class TokenConflictCollector {
     private final static String newLine = "___newLine___";
     private final static String blank = "___blank___";
     private List<MergeTuple> tuples;
-    private String output;
+    private final String projectTuplePath;
+    private final String projectName;
+    private final String output;
 
     /**
-     * @Description 按照json文件路径读取mergeTuple
-     * @Param
-     * @Return
+     *  按照json文件路径读取mergeTuple
      **/
-    public TokenConflictCollector(String jsonPath, String output) throws Exception {
+    public TokenConflictCollector(String tuplePath, String projectName, String output) {
         this.output = output;
-        this.tuples = loadTuplesFromJson(jsonPath);
+        this.projectName = projectName;
+        this.projectTuplePath = getFileWithPathSegment(tuplePath, projectName+".json");
     }
 
     /**
-     * @Description 对一个每一个tuple，收集token level conflict，最后存入文件
-     * @Param
-     * @Return
+     * 对一个每一个tuple，收集token level conflict，最后存入文件
      **/
-    public List<TokenConflict> collectTokenConflict() {
+    public List<TokenConflict> collectTokenConflict() throws Exception {
+        // check if token conflict json file already exists in output path
+        if(new File(getFileWithPathSegment(output, projectName+".json")).isFile()){
+            return JSONUtils.loadTokenConflictsFromJson(getFileWithPathSegment(output, projectName+".json"));
+        }
+
+        this.tuples = loadTuplesFromJson(projectTuplePath);
         List<TokenConflict> tokenConflicts = new ArrayList<>();
         tuples.forEach(t -> {
             try {
@@ -50,14 +57,17 @@ public class TokenConflictCollector {
                 throw new RuntimeException(e);
             }
         });
+
+        // 写入文件
+        JSONUtils.writeTokenConflicts2Json(tokenConflicts, projectName, output);
+
         return tokenConflicts;
     }
 
     /**
      * 对line-level conflict tokenize然后做token-level merge(diff3)
      *
-     * @Param 读取JSON文件得到的tuples list
-     * @Return
+     * @param tuple 读取JSON文件得到的tuples list
      **/
     public List<TokenConflict> tokenDiff(MergeTuple tuple) throws IOException {
 
@@ -71,9 +81,9 @@ public class TokenConflictCollector {
         List<String> oToken = javaParserCodeStr(O);
         List<String> rToken = javaParserCodeStr(R);
 
-        File tmpA = new File(this.output + "mergeTmp" + File.separator + "tmpA");
-        File tmpB = new File(this.output + "mergeTmp" + File.separator + "tmpB");
-        File tmpO = new File(this.output + "mergeTmp" + File.separator + "tmpO");
+        File tmpA = new File(getFileWithPathSegment(this.output, "tmpA"));
+        File tmpB = new File(getFileWithPathSegment(this.output, "tmpB"));
+        File tmpO = new File(getFileWithPathSegment(this.output, "tmpO"));
         FileUtils.writeLines(tmpA, aToken);
         FileUtils.writeLines(tmpB, bToken);
         FileUtils.writeLines(tmpO, oToken);
@@ -94,32 +104,32 @@ public class TokenConflictCollector {
 
         List<String> mergedFile = FileUtils.readLines(tmpA, Charset.defaultCharset());
         List<TokenConflict> tokenConf = splitTokenConflict(mergedFile, rToken);
-        showMergedFile(mergedFile, tokenConf, tuple.path);
+//        showMergedFile(mergedFile, tokenConf, tuple.path);
         FileUtils.delete(tmpA);
         FileUtils.delete(tmpB);
         FileUtils.delete(tmpO);
         return tokenConf;
     }
 
-    private void showMergedFile(List<String> tokens, List<TokenConflict> tokenConf, String path) {
-        System.out.println(path);
-        tokens.replaceAll(token -> token.equals(TokenConflictCollector.newLine) ? "\n" : token);
-        System.out.println("Merged file:");
-        tokens.forEach(token -> {
-            if (token.startsWith(">>>") || token.startsWith("===") || token.startsWith("<<<") || token.startsWith("|||")) {
-                System.out.print("\n" + token + "\n");
-            } else {
-                System.out.print(token + " ");
-            }
-        });
-        System.out.println("\ntoken-level conflict:");
-        tokenConf.forEach(tc -> {
-            System.out.println("---------------");
-            System.out.println(tc.toString());
-        });
-
-        System.out.println("\n\n------------------------------------------------------------------------------------\n\n");
-    }
+//    private void showMergedFile(List<String> tokens, List<TokenConflict> tokenConf, String path) {
+//        System.out.println(path);
+//        tokens.replaceAll(token -> token.equals(TokenConflictCollector.newLine) ? "\n" : token);
+//        System.out.println("Merged file:");
+//        tokens.forEach(token -> {
+//            if (token.startsWith(">>>") || token.startsWith("===") || token.startsWith("<<<") || token.startsWith("|||")) {
+//                System.out.print("\n" + token + "\n");
+//            } else {
+//                System.out.print(token + " ");
+//            }
+//        });
+//        System.out.println("\ntoken-level conflict:");
+//        tokenConf.forEach(tc -> {
+//            System.out.println("---------------");
+//            System.out.println(tc.toString());
+//        });
+//
+//        System.out.println("\n\n------------------------------------------------------------------------------------\n\n");
+//    }
 
     /**
      * token merge之后的文件可能含有多个token-level conflict，将它们切分为独立的token-level conflict
@@ -129,7 +139,7 @@ public class TokenConflictCollector {
      * @return 切分之后的list of token-level conflict
      **/
     private List<TokenConflict> splitTokenConflict(List<String> merged, List<String> rToken) {
-        int start = 0, a = -1, o = -1, b = -1, confEnd = -1, end = 0;
+        int start = 0, a, o, b, confEnd, end = 0;
         List<TokenConflict> tcList = new ArrayList<>();
         while (end < merged.size()) {
             while (end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
@@ -183,8 +193,11 @@ public class TokenConflictCollector {
     }
 
     public static void main(String[] args) throws Exception {
-//        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\mergeTuples\\Categories.java.json", "G:\\merge\\output\\");
-        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
+        //        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
+        TokenConflictCollector tcc = new TokenConflictCollector(
+                getFileWithPathSegment("./output", "filteredTuples", "defaultFilter"),
+                "junit4",
+                getFileWithPathSegment("./output", "tokenConflicts"));
         tcc.collectTokenConflict();
     }
 }
