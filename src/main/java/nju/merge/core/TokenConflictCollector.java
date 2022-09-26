@@ -36,7 +36,7 @@ public class TokenConflictCollector {
     public TokenConflictCollector(String tuplePath, String projectName, String output) {
         this.output = output;
         this.projectName = projectName;
-        this.projectTuplePath = getFileWithPathSegment(tuplePath, projectName+".json");
+        this.projectTuplePath = getFileWithPathSegment(tuplePath, projectName + ".json");
     }
 
     /**
@@ -44,8 +44,8 @@ public class TokenConflictCollector {
      **/
     public List<TokenConflict> collectTokenConflict() throws Exception {
         // check if token conflict json file already exists in output path
-        if(new File(getFileWithPathSegment(output, projectName+".json")).isFile()){
-            return JSONUtils.loadTokenConflictsFromJson(getFileWithPathSegment(output, projectName+".json"));
+        if(new File(getFileWithPathSegment(output, projectName + ".json")).isFile()){
+            return JSONUtils.loadTokenConflictsFromJson(getFileWithPathSegment(output, projectName + ".json"));
         }
 
         this.tuples = loadTuplesFromJson(projectTuplePath);
@@ -81,9 +81,9 @@ public class TokenConflictCollector {
         List<String> oToken = javaParserCodeStr(O);
         List<String> rToken = javaParserCodeStr(R);
 
-        File tmpA = new File(getFileWithPathSegment(this.output, "tmpA"));
-        File tmpB = new File(getFileWithPathSegment(this.output, "tmpB"));
-        File tmpO = new File(getFileWithPathSegment(this.output, "tmpO"));
+        File tmpA = new File(getFileWithPathSegment(output, "tmpA"));
+        File tmpB = new File(getFileWithPathSegment(output, "tmpB"));
+        File tmpO = new File(getFileWithPathSegment(output, "tmpO"));
         FileUtils.writeLines(tmpA, aToken);
         FileUtils.writeLines(tmpB, bToken);
         FileUtils.writeLines(tmpO, oToken);
@@ -139,19 +139,21 @@ public class TokenConflictCollector {
      * @return 切分之后的list of token-level conflict
      **/
     private List<TokenConflict> splitTokenConflict(List<String> merged, List<String> rToken) {
-        int start = 0, a, o, b, confEnd, end = 0;
-        List<TokenConflict> tcList = new ArrayList<>();
+        int start = 0, end = 0, confEnd;
+        int a, b, o;
+
+        List<TokenConflict> result = new ArrayList<>();
         while (end < merged.size()) {
-            while (end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
+            while (end < merged.size() && !merged.get(end).startsWith("<<<"))   end++;
             if (end >= merged.size()) break;
             a = end;
-            while (!merged.get(end).startsWith("|||")) end++;
+            while (!merged.get(end).startsWith("|||"))  end++;
             o = end;
-            while (!merged.get(end).startsWith("===")) end++;
+            while (!merged.get(end).startsWith("==="))  end++;
             b = end;
-            while (!merged.get(end).startsWith(">>>")) end++;
+            while (!merged.get(end).startsWith(">>>"))  end++;
             confEnd = end;
-            while (end < merged.size() && !merged.get(end).startsWith("<<<")) end++;
+            while (end < merged.size() && !merged.get(end).startsWith("<<<"))   end++;
 
             TokenConflict tc = new TokenConflict(
                     merged.subList(start, a),
@@ -160,11 +162,11 @@ public class TokenConflictCollector {
                     merged.subList(o + 1, b),
                     merged.subList(b + 1, confEnd),
                     rToken);
-            tcList.add(tc);
+            result.add(tc);
 
             start = confEnd + 1;
         }
-        return tcList;
+        return result;
     }
 
 
@@ -194,10 +196,10 @@ public class TokenConflictCollector {
 
     public static void main(String[] args) throws Exception {
         //        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
-        TokenConflictCollector tcc = new TokenConflictCollector(
+        TokenConflictCollector collector = new TokenConflictCollector(
                 getFileWithPathSegment("./output", "filteredTuples", "defaultFilter"),
                 "junit4",
                 getFileWithPathSegment("./output", "tokenConflicts"));
-        tcc.collectTokenConflict();
+        collector.collectTokenConflict();
     }
 }

@@ -16,7 +16,7 @@ public class JSONUtils {
     public static final Logger logger = LoggerFactory.getLogger(JSONUtils.class);
 
     public static List<MergeTuple> loadTuplesFromJson(String path) throws Exception {
-        return loadArrayfromJson(path, "mergeTuples", MergeTuple.class);
+        return loadArrayFromJson(path, "mergeTuples", MergeTuple.class);
     }
 
     public static void writeTuples2Json(List<MergeTuple> tuples, String project, String output) throws Exception {
@@ -48,11 +48,11 @@ public class JSONUtils {
         json2File(json, output, projectName);
     }
 
-    public static List<TokenConflict> loadTokenConflictsFromJson(String path) throws Exception {
-        return loadArrayfromJson(path, "tokenConflicts", TokenConflict.class);
+    public static List<TokenConflict> loadTokenConflictsFromJson(String path) {
+        return loadArrayFromJson(path, "tokenConflicts", TokenConflict.class);
     }
 
-    private static <T> List<T> loadArrayfromJson(String jsonPath, String fieldName, Class<T> classType) throws FileNotFoundException {
+    private static <T> List<T> loadArrayFromJson(String jsonPath, String fieldName, Class<T> classType)  {
         try {
             JSONReader reader = JSONReader.of(new FileReader(jsonPath));
             JSONArray array = (JSONArray) reader.readObject().get(fieldName);

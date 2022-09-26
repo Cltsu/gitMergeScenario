@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class Client {
 
-    private static final String workdir = "G:/merge";
+    private static final String workdir = "/Users/zhuyihang/Desktop/experiments";
     private static final String reposDir = workdir + "/repos";   // store all the repos
     private static final String outputDir = workdir + "/output";
     private static final String repoList = workdir + "/list.txt";

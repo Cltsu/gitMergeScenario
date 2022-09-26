@@ -33,21 +33,41 @@ public class LabelAnalysis {
                 setValue(ResolutionLabel.CONCAT_AB, conflict);
             else if (query(concat(conflict.prefix, conflict.suffix, conflict.bRegion, conflict.aRegion), resolution))
                 setValue(ResolutionLabel.CONCAT_BA, conflict);
-            else if (query(concat(conflict.prefix, conflict.suffix, conflict.aRegion), resolution))
+            else if (query(conflict.a, resolution))
                 setValue(ResolutionLabel.ACCEPT_A, conflict);
-            else if (query(concat(conflict.prefix, conflict.suffix, conflict.bRegion), resolution))
+            else if (query(conflict.b, resolution))
                 setValue(ResolutionLabel.ACCEPT_B, conflict);
-            else if (query(concat(conflict.prefix, conflict.suffix, conflict.oRegion), resolution))
+            else if (query(conflict.o, resolution))
                 setValue(ResolutionLabel.ACCEPT_BASE, conflict);
 
-            if (!found)
+            if (!found) {
+                List<String> aa = join(conflict.a);
+                List<String> bb = join(conflict.b);
+                List<String> oo = join(conflict.o);
+                List<String> rr = join(conflict.resolution);
+
                 setValue(ResolutionLabel.NONE, conflict);
+            }
         }
     }
 
-    public static void setValue(ResolutionLabel label, TokenConflict tc) {
+    private List<String> join(List<String> regions){
+        List<String> res = new ArrayList<>();
+        StringBuilder builder = new StringBuilder();
+        for(String s : regions){
+            if(s.equals("___newLine___")) {
+                res.add(builder.toString());
+                builder.setLength(0);
+            }else{
+                builder.append(s);
+            }
+        }
+        return res;
+    }
+
+    public static void setValue(ResolutionLabel label, TokenConflict conflict) {
         found = true;
-        tc.label = label;
+        conflict.label = label;
         count.put(label, count.getOrDefault(label, 0) + 1); // 统计
     }
 
@@ -63,10 +83,11 @@ public class LabelAnalysis {
 
     public static void main(String[] args) throws Exception {
         LabelAnalysis labelAnalysis = new LabelAnalysis();
+        String output = "/Users/zhuyihang/Desktop/experiments/output";
         labelAnalysis.process(
-                PathUtils.getFileWithPathSegment("./output", "filteredTuples", "defaultFilter"),
+                PathUtils.getFileWithPathSegment(output, "filteredTuples", "defaultFilter"),
                 "spring-boot",
-                PathUtils.getFileWithPathSegment("./output", "tokenConflicts"));
+                PathUtils.getFileWithPathSegment(output, "tokenConflicts"));
         Map<ResolutionLabel, Integer> countMap = LabelAnalysis.count;
         Set<Map.Entry<ResolutionLabel, Integer>> ms = countMap.entrySet();
         for (Map.Entry entry : ms) {

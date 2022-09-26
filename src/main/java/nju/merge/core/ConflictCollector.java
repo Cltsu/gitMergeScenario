@@ -1,6 +1,6 @@
 package nju.merge.core;
 
-import nju.merge.entity.MergeConflict;
+import nju.merge.client.Client;
 import nju.merge.entity.MergeScenario;
 import nju.merge.utils.PathUtils;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -20,10 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ConflictCollector {
     private static final Logger logger = LoggerFactory.getLogger(GitService.class);
@@ -32,6 +31,8 @@ public class ConflictCollector {
     private final String URL;
     private final String output;
     private Repository repository;
+
+    private static Long cnt = 0L;
 
     public ConflictCollector(String projectPath, String projectName, String url, String output) {
         this.projectName = projectName;
@@ -49,83 +50,61 @@ public class ConflictCollector {
         repository = service.cloneIfNotExist(this.projectPath, URL);
 
         List<RevCommit> mergeCommits = service.getMergeCommits(repository);
-        List<MergeConflict> conflictList = new ArrayList<>();
 
-        for (RevCommit commit : mergeCommits) {
-            mergeAndGetConflict(commit, conflictList);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        Long start = System.currentTimeMillis();
+
+        for (RevCommit commit : mergeCommits){
+            executor.submit(() -> {
+                try {
+                    mergeAndCollectConflictFiles(commit);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            });
         }
 
-        for (MergeConflict conflict : conflictList) {
-            saveConflictToFiles(conflict);
-        }
+        executor.shutdown();
+        while(!executor.isTerminated());
+
+        Long end = System.currentTimeMillis();
+        System.out.println(1.0 * (end - start) / 60000);
 
         threeWayMergeFile(PathUtils.getFileWithPathSegment(output, projectName));
     }
 
-    private void mergeAndGetConflict(RevCommit resolve, List<MergeConflict> conflictList) throws Exception {
-        RevCommit ours = resolve.getParents()[0];
-        RevCommit theirs = resolve.getParents()[1];
-
+    private void mergeAndCollectConflictFiles(RevCommit merged) throws Exception {
+        RevCommit p1 = merged.getParents()[0];
+        RevCommit p2 = merged.getParents()[1];
+        logger.info("merge {} and {}, child commit {}", p1.getName(), p2.getName(), merged.getName());
         ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repository, true);
 
-        if (!merger.merge(ours, theirs)) {
-            RecursiveMerger rMerger = (RecursiveMerger) merger;
+        if(!merger.merge(p1, p2)){
+            RecursiveMerger rMerger = (RecursiveMerger)merger;
             RevCommit base = (RevCommit) rMerger.getBaseCommitId();
 
-            MergeConflict conflict = new MergeConflict();
-
             rMerger.getMergeResults().forEach((file, result) -> {
-                if (file.endsWith(".java") && result.containsConflicts()) {
-                    logger.info("file {} added", file);
-                    conflict.conflictFiles.add(file);
+                if(file.endsWith(".java") && result.containsConflicts()) {
+                    logger.info("conflicts were found in {}", file);
+                    MergeScenario scenario = new MergeScenario(this.projectName, merged.getName(), file);
+                    try {
+                        logger.info("collecting scenario in merged commit {}", merged.getName());
+                        scenario.resolve = getFileByCommitAndPath(file, merged);
+                        scenario.ours = getFileByCommitAndPath(file, p1);
+                        scenario.theirs = getFileByCommitAndPath(file, p2);
+
+                        if(isBaseExist(base)){
+                            scenario.base = getFileByCommitAndPath(file, base);
+                        }
+                        scenario.write2folder(output);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             });
-
-            if (conflict.conflictFiles.size() != 0) {
-                conflict.base = base;
-                conflict.ours = ours;
-                conflict.theirs = theirs;
-                conflict.resolve = resolve;
-                conflict.commitId = resolve.getName();
-                conflictList.add(conflict);
-            }
         }
-    }
-
-    private void saveConflictToFiles(MergeConflict conflict){
-        Map<String, MergeScenario> scenarioMap = new HashMap<>();
-        for (String fileName : conflict.conflictFiles) {
-            scenarioMap.put(fileName, new MergeScenario(projectName, conflict.commitId, fileName));
-        }
-
-        if (scenarioMap.size() == 0)
-            return;
-
-        RevCommit resolve = conflict.resolve;
-        RevCommit base = conflict.base;
-        RevCommit ours = conflict.ours;
-        RevCommit theirs = conflict.theirs;
-
-//        logger.info("Collecting scenario in merge commit {}", resolve.getName());
-        scenarioMap.forEach((file, scenario) -> {
-            try {
-                scenario.resolve = getFileWithCommitAndPath(file, resolve);
-                scenario.ours = getFileWithCommitAndPath(file, ours);
-                scenario.theirs = getFileWithCommitAndPath(file, theirs);
-                if (isBaseExist(base)) {
-                    scenario.base = getFileWithCommitAndPath(file, base);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        scenarioMap.forEach((file, scenario) -> {
-            try {
-                scenario.write2folder(output);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     private boolean isBaseExist(ObjectId id) {
@@ -142,7 +121,7 @@ public class ConflictCollector {
         return true;
     }
 
-    private byte[] getFileWithCommitAndPath(String path, RevCommit commit) throws IOException {
+    private byte[] getFileByCommitAndPath(String path, RevCommit commit) throws IOException {
         TreeWalk treeWalk = TreeWalk.forPath(repository, path, commit.getTree());
         if (treeWalk == null)
             return null;
@@ -224,5 +203,6 @@ public class ConflictCollector {
             }
         });
     }
+
 
 }
