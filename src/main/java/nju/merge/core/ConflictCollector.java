@@ -1,17 +1,13 @@
 package nju.merge.core;
 
-import nju.merge.client.Client;
 import nju.merge.entity.MergeScenario;
 import nju.merge.utils.PathUtils;
-import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.merge.RecursiveMerger;
 import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +20,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static nju.merge.core.GitService.isBaseExist;
+
 public class ConflictCollector {
     private static final Logger logger = LoggerFactory.getLogger(GitService.class);
     private final String projectName;
@@ -32,7 +30,10 @@ public class ConflictCollector {
     private final String output;
     private Repository repository;
 
-    private static Long cnt = 0L;
+    private static int cnt = 0;         // 已处理的 commit 数量
+    private static int sum;             // commit 总数
+    private static long collected = 0L; // 收集到的 MergeScenario 数量
+    private static long startTime;      // 开始时间
 
     public ConflictCollector(String projectPath, String projectName, String url, String output) {
         this.projectName = projectName;
@@ -50,12 +51,14 @@ public class ConflictCollector {
         repository = service.cloneIfNotExist(this.projectPath, URL);
 
         List<RevCommit> mergeCommits = service.getMergeCommits(repository);
+        sum = mergeCommits.size();
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         Long start = System.currentTimeMillis();
 
         for (RevCommit commit : mergeCommits){
+            logger.info("{}% -- collecting No.{} of all {} commits",100d * cnt/mergeCommits.size(), cnt++, mergeCommits.size());
             executor.submit(() -> {
                 try {
                     mergeAndCollectConflictFiles(commit);
@@ -65,6 +68,9 @@ public class ConflictCollector {
                 }
             });
         }
+
+        startTime = System.currentTimeMillis();
+        cnt=0;  // 这之后记录被处理的数量
 
         executor.shutdown();
         while(!executor.isTerminated());
@@ -78,7 +84,6 @@ public class ConflictCollector {
     private void mergeAndCollectConflictFiles(RevCommit merged) throws Exception {
         RevCommit p1 = merged.getParents()[0];
         RevCommit p2 = merged.getParents()[1];
-        logger.info("merge {} and {}, child commit {}", p1.getName(), p2.getName(), merged.getName());
         ThreeWayMerger merger = MergeStrategy.RECURSIVE.newMerger(repository, true);
 
         if(!merger.merge(p1, p2)){
@@ -95,9 +100,11 @@ public class ConflictCollector {
                         scenario.ours = getFileByCommitAndPath(file, p1);
                         scenario.theirs = getFileByCommitAndPath(file, p2);
 
-                        if(isBaseExist(base)){
+                        if(isBaseExist(base, repository)){
                             scenario.base = getFileByCommitAndPath(file, base);
                         }
+                        collected++;
+
                         scenario.write2folder(output);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -105,21 +112,11 @@ public class ConflictCollector {
                 }
             });
         }
+        cnt++;
+        logger.info("{}% --- {} completed out of all {} commits, collected {} MergeScenerios, consuming {}s ", 100d * cnt/sum, cnt, sum, collected, (System.currentTimeMillis()-startTime)/1000d);
     }
 
-    private boolean isBaseExist(ObjectId id) {
-        RevWalk walk = new RevWalk(repository);
-        try {
-            walk.parseAny(id);
-        } catch (MissingObjectException e) {
-            logger.info("Base not found in {}", id.getName());
-            return false;
-        } catch (IOException e) {
-            logger.warn("A pack file or loose object could not be read!");
-            return false;
-        }
-        return true;
-    }
+
 
     private byte[] getFileByCommitAndPath(String path, RevCommit commit) throws IOException {
         TreeWalk treeWalk = TreeWalk.forPath(repository, path, commit.getTree());
