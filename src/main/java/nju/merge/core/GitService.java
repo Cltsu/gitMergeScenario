@@ -1,5 +1,7 @@
 package nju.merge.core;
 
+import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -9,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +62,18 @@ public class GitService {
         return commits;
     }
 
-
-
+    public static boolean isBaseExist(ObjectId id, Repository repository) {
+        RevWalk walk = new RevWalk(repository);
+        try {
+            walk.parseAny(id);
+        } catch (MissingObjectException e) {
+            logger.info("Base not found in {}", id.getName());
+            return false;
+        } catch (IOException e) {
+            logger.warn("A pack file or loose object could not be read!");
+            return false;
+        }
+        return true;
+    }
 
 }
