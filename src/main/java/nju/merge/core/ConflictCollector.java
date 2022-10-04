@@ -1,6 +1,5 @@
 package nju.merge.core;
 
-import nju.merge.client.Client;
 import nju.merge.entity.MergeScenario;
 import nju.merge.utils.PathUtils;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -70,7 +69,7 @@ public class ConflictCollector {
         while(!executor.isTerminated());
 
         Long end = System.currentTimeMillis();
-        System.out.println(1.0 * (end - start) / 60000);
+        System.out.println(1.0 * (end - start) / 60000 + "min");
 
         threeWayMergeFile(PathUtils.getFileWithPathSegment(output, projectName));
     }

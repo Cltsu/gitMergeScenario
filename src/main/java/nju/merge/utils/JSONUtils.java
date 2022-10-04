@@ -23,6 +23,8 @@ public class JSONUtils {
         JSONObject json = new JSONObject();
         json.put("Project", project);
 
+        int len = tuples.size();
+
         JSONArray array = new JSONArray();
         tuples.forEach(tuple -> {
             JSONObject obj = new JSONObject();
@@ -32,6 +34,9 @@ public class JSONUtils {
             obj.put("base", tuple.base);
             obj.put("resolve", tuple.resolve);
             array.add(obj);
+            if(array.size() % 1 == 0){
+                logger.info("{}% c-- {} out of {} tuple added to JSONArray", 100d * array.size()/len, array.size(), len);
+            }
         });
         json.put("mergeTuples", array);
 
@@ -69,7 +74,8 @@ public class JSONUtils {
             FileUtils.forceMkdir(dir);
         }
         OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(PathUtils.getFileWithPathSegment(outputDir, projectName + ".json")));
-        osw.write(json.toJSONString());
+        String content = json.toJSONString();
+        osw.write(content);
         osw.flush();
         osw.close();
     }

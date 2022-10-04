@@ -3,6 +3,8 @@ package nju.merge.core;
 import difflib.DiffUtils;
 import difflib.Patch;
 import nju.merge.entity.MergeTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +18,8 @@ import static nju.merge.utils.FileUtils.lineFilter;
 import static nju.merge.utils.FileUtils.readFile;
 
 public class DatasetCollector {
+    public static final Logger logger = LoggerFactory.getLogger(DatasetCollector.class);
+
     private static int[] rec = new int[0];
     public List<MergeTuple> mergeTuples;
 
@@ -53,36 +57,42 @@ public class DatasetCollector {
         List<String> copy = new ArrayList<>();
         List<MergeTuple> tupleList = new ArrayList<>();
 
-        for (int i = 0, cnt = 0; i < conflict.size(); ++i) {
-            if (!conflict.get(i).startsWith("<<<<<<")) {
-                copy.add(conflict.get(i));
-                cnt++;
-                continue;
+        try {
+            for (int i = 0, cnt = 0; i < conflict.size(); ++i) {
+                if (!conflict.get(i).startsWith("<<<<<<")) {
+                    copy.add(conflict.get(i));
+                    cnt++;
+                    continue;
+                }
+
+                MergeTuple tuple = new MergeTuple(fileName);
+                tuple.mark = cnt;
+                int j = i, k = i;
+                try {
+                    while (!conflict.get(k).startsWith("||||||")) {
+                        k++;
+                    }
+                    tuple.ours = getCodeSnippets(conflict, j, k);
+
+                    j = k;
+                    while (!conflict.get(k).startsWith("======")) {
+                        k++;
+                    }
+                    tuple.base = getCodeSnippets(conflict, j, k);
+
+                    j = k;
+                    while (!conflict.get(k).startsWith(">>>>>>")) {
+                        k++;
+                    }
+                    tuple.theirs = getCodeSnippets(conflict, j, k);
+                } catch (IndexOutOfBoundsException e) {
+                    System.out.println(fileName);
+                }
+                i = k;
+                tupleList.add(tuple);
             }
-
-            MergeTuple tuple = new MergeTuple(fileName);
-            tuple.mark = cnt;
-            int j = i, k = i;
-
-            while (!conflict.get(k).startsWith("||||||")) {
-                k++;
-            }
-            tuple.ours = getCodeSnippets(conflict, j, k);
-
-            j = k;
-            while(!conflict.get(k).startsWith("======")) {
-                k++;
-            }
-            tuple.base = getCodeSnippets(conflict, j, k);
-
-            j = k;
-            while(!conflict.get(k).startsWith(">>>>>>")) {
-                k++;
-            }
-            tuple.theirs = getCodeSnippets(conflict, j, k);
-
-            i = k;
-            tupleList.add(tuple);
+        }catch (IndexOutOfBoundsException e){
+            logger.info("polluted data with markers encountered");
         }
 
         alignLines(copy, resolve);
@@ -124,6 +134,7 @@ public class DatasetCollector {
 
                         try {
                             mergeTuples.addAll(extractMergeTuples(conflict, resolve, dir.toString()));
+                            logger.info("{} tuples added", mergeTuples.size());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
