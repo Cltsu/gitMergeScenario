@@ -21,8 +21,8 @@ public class DatasetFilter {
     private List<MergeTuple> tuples;
     private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
 
-    public DatasetFilter(String path, String projectName, String outputDir) throws Exception {
-        this.tuples = loadTuplesFromJson(path);
+    public DatasetFilter(String path, String projectName, String outputDir) {
+        this.tuples = loadTuplesFromJson(path); // todo: 一次性加载所有tuple在海量数据下可能溢出？
         this.projectName = projectName;
         this.outputDir = outputDir;
     }
@@ -52,8 +52,7 @@ public class DatasetFilter {
             List<String> copy = new ArrayList<>(ours);
             ours.addAll(theirs);
             theirs.addAll(copy);
-            if(resolve.equals(ours) || resolve.equals(theirs))
-                return true;
+            return resolve.equals(ours) || resolve.equals(theirs);
         }
         return false;
     }

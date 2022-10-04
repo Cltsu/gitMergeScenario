@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class Client {
 
-    private static final String workdir = "/Users/zhuyihang/Desktop/experiments";
+    private static final String workdir = ".";
     private static final String reposDir = workdir + "/repos";   // store all the repos
     private static final String outputDir = workdir + "/output";
     private static final String repoList = workdir + "/list.txt";
@@ -54,7 +54,7 @@ public class Client {
                     collectMergeTuples(outputJsonPath, projectName, outputConflictPath);
 
                     logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName + ".json"), projectName, filteredTuplePath);
+                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath);
                 }else{
                     if(args[0].contains("1")){
                         logger.info("-------------------------- Collect conflict files ----------------------------------");
@@ -66,7 +66,7 @@ public class Client {
                     }
                     if(args[0].contains("3")){
                         logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName + ".json"), projectName, filteredTuplePath);
+                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath);
                     }
                 }
 //                deleteRepo(repoPath);
@@ -85,14 +85,14 @@ public class Client {
         collector.process();
     }
 
-    public static void collectMergeTuples(String outputFile, String projectName, String conflictFilesPath) throws Exception {
+    public static void collectMergeTuples(String outputDir, String projectName, String conflictFilesPath) throws Exception {
         DatasetCollector collector = new DatasetCollector();
         collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectName));
-        JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputFile);
+        JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputDir);
     }
 
-    public static void mergeTuplesAnalysis(String jsonPath, String projectName, String outputDir) throws Exception {
-        DatasetFilter filter = new DatasetFilter(jsonPath, projectName, outputDir);
+    public static void mergeTuplesAnalysis(String jsonDir, String projectName, String outputDir) throws Exception {
+        DatasetFilter filter = new DatasetFilter(jsonDir, projectName, outputDir);
 //        filter.analysis();
         filter.analysisDefault();
     }
