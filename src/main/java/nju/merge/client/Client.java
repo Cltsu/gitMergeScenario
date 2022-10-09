@@ -39,8 +39,10 @@ public class Client {
         Map<String, String> repos = new HashMap<>();
         addReposFromText(repoList, repos);
 
-        repos.forEach((projectName, url) -> {
-            String repoPath = PathUtils.getFileWithPathSegment(reposDir, projectName); // store the specific repo
+        repos.forEach((projectIdentification, url) -> {
+            String[] split = PathUtils.getSystemCompatiblePath(projectIdentification).split(File.separator);
+            String projectName = split[split.length - 1];
+            String repoPath = PathUtils.getFileWithPathSegment(reposDir, projectIdentification); // store the specific repo
             String outputConflictPath = PathUtils.getFileWithPathSegment(outputDir, "conflictFiles");   // store all conflict files during collecting
             String outputJsonPath = PathUtils.getFileWithPathSegment(outputDir, "mergeTuples"); // store output tuples
             String filteredTuplePath = PathUtils.getFileWithPathSegment(outputDir, "filteredTuples"); // store filtered tuples
@@ -88,6 +90,8 @@ public class Client {
     public static void collectMergeTuples(String outputDir, String projectName, String conflictFilesPath) throws Exception {
         DatasetCollector collector = new DatasetCollector();
         collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectName));
+        logger.error("project name: {}", projectName);
+        logger.error("{} merge tuple collected.", collector.mergeTuples.size());
         JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputDir);
     }
 

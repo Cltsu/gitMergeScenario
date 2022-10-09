@@ -57,8 +57,9 @@ public class ConflictCollector {
 
         Long start = System.currentTimeMillis();
 
-        for (RevCommit commit : mergeCommits){
-            logger.info("{}% -- collecting No.{} of all {} commits",100d * cnt/mergeCommits.size(), cnt++, mergeCommits.size());
+        for (int i = 0; i < mergeCommits.size(); i++){
+            RevCommit commit = mergeCommits.get(i);
+            logger.info("{}% -- collecting No.{} of all {} commits",100d * i/mergeCommits.size(), i, mergeCommits.size());
             executor.submit(() -> {
                 try {
                     mergeAndCollectConflictFiles(commit);
@@ -70,8 +71,6 @@ public class ConflictCollector {
         }
 
         startTime = System.currentTimeMillis();
-        cnt=0;  // 这之后记录被处理的数量
-
         executor.shutdown();
         while(!executor.isTerminated());
 

@@ -22,6 +22,8 @@ jgit的clone指令由于国内的网络问题，可能会出错，需要先手�
 junit4,tmpurl
 spring-boot,tmp
 ```
+> ### 注意
+> 所输入的仓库应为 `repos` 目录下的相对位置，如 `repos/aosp/dalvik` 应输入 `aosp/dalvik` 分隔符斜杠与反斜杠皆可
 * 项目根目录下 `repos` 目录存放实际仓库；
 ```
 repos

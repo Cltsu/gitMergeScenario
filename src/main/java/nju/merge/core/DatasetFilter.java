@@ -94,16 +94,17 @@ public class DatasetFilter {
 
 
     public void analysis() throws Exception {
-        logger.info("Total tuples : {}", this.tuples.size());
+        logger.error("project name : {}", this.projectName);
+        logger.error("Total tuples : {}", this.tuples.size());
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
         List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).collect(Collectors.toList());
-        logger.info("Accept one side : {} ", acceptOneSide.size());
-        logger.info("Lack of resolution : {} ", lackOfR.size());
+        logger.error("Accept one side : {} ", acceptOneSide.size());
+        logger.error("Lack of resolution : {} ", lackOfR.size());
 
         // 要求有ours, theirs, resolve(这里需要这么严格吗)
         tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
-        logger.info("Complete tuples : {}", this.tuples.size());
+        logger.error("Complete tuples : {}", this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
@@ -113,18 +114,18 @@ public class DatasetFilter {
         JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
         JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtils.getFileWithPathSegment(outputDir, "lackOfResolution"));
 
-        logger.info("Concat : {} ", concat.size());
-        logger.info("MixLine : {} ", mixLine.size());
-        logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
+        logger.error("Concat : {} ", concat.size());
+        logger.error("MixLine : {} ", mixLine.size());
+        logger.error("Out of vocabulary : {} ", outOfVocabulary.size());
 
         List<MergeTuple> noBase = this.tuples.stream().filter(DatasetFilter::filterNoBase).collect(Collectors.toList());
-        logger.info("no base: {}  {}%", noBase.size(), 100*(double)(noBase.size())/tuples.size());
+        logger.error("no base: {}  {}%", noBase.size(), 100*(double)(noBase.size())/tuples.size());
 
     }
 
     public void analysisDefault() throws Exception {
         List<MergeTuple> defaultTuples = this.tuples.stream().filter(DatasetFilter::defaultFilter).collect(Collectors.toList());
         JSONUtils.writeTuples2Json(defaultTuples, projectName, PathUtils.getFileWithPathSegment(outputDir, "defaultFilter"));
-        logger.info("tuples : {}", defaultTuples.size());
+        logger.error("default filtered tuples : {}", defaultTuples.size());
     }
 }
