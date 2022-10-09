@@ -9,6 +9,5 @@ public class AlignedSeq {
     public List<String> ob;
     public List<String> editSeqAo;
     public List<String> editSeqBo;
-
     public ResolutionLabel label;
 }

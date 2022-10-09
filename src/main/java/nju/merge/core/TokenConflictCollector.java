@@ -22,8 +22,8 @@ import static nju.merge.utils.JSONUtils.loadTuplesFromJson;
 public class TokenConflictCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(TokenConflictCollector.class);
-    private final static String newLine = "___newLine___";
-    private final static String blank = "___blank___";
+    public final static String newLine = "___newLine___";
+    public final static String blank = "___blank___";
     private List<MergeTuple> tuples;
     private String output;
 
@@ -186,8 +186,8 @@ public class TokenConflictCollector {
     }
 
     public static void main(String[] args) throws Exception {
-//        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\mergeTuples\\Categories.java.json", "G:\\merge\\output\\");
-        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
+        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\mergeTuples\\Categories.java.json", "G:\\merge\\output\\");
+//        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
         tcc.collectTokenConflict();
     }
 }

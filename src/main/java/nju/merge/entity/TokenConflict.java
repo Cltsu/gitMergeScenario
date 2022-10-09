@@ -1,6 +1,7 @@
 package nju.merge.entity;
 
 import com.github.javaparser.Token;
+import nju.merge.core.TokenConflictCollector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,6 @@ public class TokenConflict {
     public List<String> aRegion;
     public List<String> oRegion;
     public List<String> bRegion;
-
 
     public List<String> resolution;
 
@@ -45,7 +45,11 @@ public class TokenConflict {
 
     @Override
     public String toString(){
-        String ret = a.toString() + "\n" + o.toString() + "\n" + b.toString() + "\n";
-        return ret;
+        String atmp = "", btmp = "", otmp = "";
+        for(String t : a){atmp = atmp.concat(t) + " ";}
+        for(String t : b){btmp = btmp.concat(t) + " ";}
+        for(String t : o){otmp = otmp.concat(t) + " ";}
+        String ret = atmp + "\n" + otmp + "\n" + btmp + "\n";
+        return ret.replace(TokenConflictCollector.newLine, "<newline>");
     }
 }
