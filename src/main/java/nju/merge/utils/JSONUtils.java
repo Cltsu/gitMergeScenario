@@ -42,7 +42,7 @@ public class JSONUtils {
         int batchEnd = Math.min(1000, tuples.size());
         int batchStart = 0;
         int fileCounter = 1;
-        while (batchStart != tuples.size()) {
+        do {
             JSONObject json = new JSONObject();
             json.put("Project", project);
             JSONArray array = new JSONArray();
@@ -62,7 +62,7 @@ public class JSONUtils {
             fileCounter++;
             batchStart = batchEnd;
             batchEnd = Math.min(batchEnd + 1000, tuples.size());
-        }
+        } while(batchStart != batchEnd);
     }
 
     public static void writeTokenConflicts2Json(List<TokenConflict> tokenConflictList, String projectName, String output) throws IOException {

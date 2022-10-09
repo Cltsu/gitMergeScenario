@@ -30,10 +30,10 @@ public class ConflictCollector {
     private final String output;
     private Repository repository;
 
-    private static int cnt = 0;         // 已处理的 commit 数量
-    private static int sum;             // commit 总数
-    private static long collected = 0L; // 收集到的 MergeScenario 数量
-    private static long startTime;      // 开始时间
+    private int cnt = 0;         // 已处理的 commit 数量
+    private int sum;             // commit 总数
+    private long collected = 0L; // 收集到的 MergeScenario 数量
+    private long startTime;      // 开始时间
 
     public ConflictCollector(String projectPath, String projectName, String url, String output) {
         this.projectName = projectName;
@@ -73,7 +73,7 @@ public class ConflictCollector {
         startTime = System.currentTimeMillis();
         executor.shutdown();
         while(!executor.isTerminated());
-
+        cnt = 0; //todo bug fix
         Long end = System.currentTimeMillis();
         System.out.println(1.0 * (end - start) / 60000 + "min");
 
