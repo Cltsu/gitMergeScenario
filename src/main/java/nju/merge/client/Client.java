@@ -40,36 +40,34 @@ public class Client {
         IOUtils.outputRes2csv(progressFile, CollectRecord.getHeaders());
 
         repos.forEach((projectIdentification, url) -> {
-            String[] split = PathUtils.getSystemCompatiblePath(projectIdentification).split(File.separator);
-            String projectName = split[split.length - 1];
             String repoPath = PathUtils.getFileWithPathSegment(reposDir, projectIdentification); // store the specific repo
             String outputConflictPath = PathUtils.getFileWithPathSegment(outputDir, "conflictFiles");   // store all conflict files during collecting
             String outputJsonPath = PathUtils.getFileWithPathSegment(outputDir, "mergeTuples"); // store output tuples
             String filteredTuplePath = PathUtils.getFileWithPathSegment(outputDir, "filteredTuples"); // store filtered tuples
 
-            CollectRecord record = new CollectRecord(projectName);
+            CollectRecord record = new CollectRecord(projectIdentification);
             try {
                 if (args.length == 0) {
                     logger.info("-------------------------- Collect conflict files ----------------------------------");
-                    record.setMerge_commits(collectMergeConflict(repoPath, projectName, url, outputConflictPath));
+                    record.setMerge_commits(collectMergeConflict(repoPath, projectIdentification, url, outputConflictPath));
 
                     logger.info("-------------------------- Collect merge tuples ----------------------------------");
-                    collectMergeTuples(outputJsonPath, projectName, outputConflictPath);
+                    collectMergeTuples(outputJsonPath, projectIdentification, outputConflictPath);
 
                     logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath, record);
+                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectIdentification), projectIdentification, filteredTuplePath, record);
                 } else {
                     if (args[0].contains("1")) {
                         logger.info("-------------------------- Collect conflict files ----------------------------------");
-                        record.setMerge_commits(collectMergeConflict(repoPath, projectName, url, outputConflictPath));
+                        record.setMerge_commits(collectMergeConflict(repoPath, projectIdentification, url, outputConflictPath));
                     }
                     if (args[0].contains("2")) {
                         logger.info("-------------------------- Collect merge tuples ----------------------------------");
-                        collectMergeTuples(outputJsonPath, projectName, outputConflictPath);
+                        collectMergeTuples(outputJsonPath, projectIdentification, outputConflictPath);
                     }
                     if (args[0].contains("3")) {
                         logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath, record);
+                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectIdentification), projectIdentification, filteredTuplePath, record);
                     }
                 }
 //                deleteRepo(repoPath);
@@ -84,19 +82,19 @@ public class Client {
         FileUtils.deleteDirectory(new File(repoPath));
     }
 
-    public static int collectMergeConflict(String projectPath, String projectName, String url, String output) throws Exception {
-        ConflictCollector collector = new ConflictCollector(projectPath, projectName, url, output);
+    public static int collectMergeConflict(String projectPath, String projectIdentification, String url, String output) throws Exception {
+        ConflictCollector collector = new ConflictCollector(projectPath, projectIdentification, url, output);
         return collector.process();
     }
 
-    public static void collectMergeTuples(String outputDir, String projectName, String conflictFilesPath) throws Exception {
+    public static void collectMergeTuples(String outputDir, String projectIdentification, String conflictFilesPath) throws Exception {
         DatasetCollector collector = new DatasetCollector();
-        collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectName));
-        JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputDir);
+        collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectIdentification));
+        JSONUtils.writeTuples2Json(collector.mergeTuples, projectIdentification, outputDir);
     }
 
-    public static void mergeTuplesAnalysis(String jsonDir, String projectName, String outputDir, CollectRecord record) throws Exception {
-        DatasetFilter filter = new DatasetFilter(jsonDir, projectName, outputDir);
+    public static void mergeTuplesAnalysis(String jsonDir, String projectIdentification, String outputDir, CollectRecord record) throws Exception {
+        DatasetFilter filter = new DatasetFilter(jsonDir, projectIdentification, outputDir);
         filter.analysis(record);
 //        filter.analysisDefault();
     }
