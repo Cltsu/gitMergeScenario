@@ -3,23 +3,21 @@ package nju.merge.client;
 import nju.merge.core.ConflictCollector;
 import nju.merge.core.DatasetCollector;
 import nju.merge.core.DatasetFilter;
+import nju.merge.entity.CollectRecord;
+import nju.merge.utils.IOUtils;
 import nju.merge.utils.JSONUtils;
 import nju.merge.utils.PathUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Client {
-
     private static final String workdir = ".";
     private static final String reposDir = workdir + "/repos";   // store all the repos
     private static final String outputDir = workdir + "/output";
@@ -35,9 +33,11 @@ public class Client {
         });
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         Map<String, String> repos = new HashMap<>();
         addReposFromText(repoList, repos);
+        File progressFile = new File(PathUtils.getFileWithPathSegment("log", "progress_out_" + new Date().getTime() + ".csv"));
+        IOUtils.outputRes2csv(progressFile, CollectRecord.getHeaders());
 
         repos.forEach((projectIdentification, url) -> {
             String[] split = PathUtils.getSystemCompatiblePath(projectIdentification).split(File.separator);
@@ -47,34 +47,36 @@ public class Client {
             String outputJsonPath = PathUtils.getFileWithPathSegment(outputDir, "mergeTuples"); // store output tuples
             String filteredTuplePath = PathUtils.getFileWithPathSegment(outputDir, "filteredTuples"); // store filtered tuples
 
+            CollectRecord record = new CollectRecord(projectName);
             try {
-                if(args.length == 0) {
+                if (args.length == 0) {
                     logger.info("-------------------------- Collect conflict files ----------------------------------");
-                    collectMergeConflict(repoPath, projectName, url, outputConflictPath);
+                    record.setMerge_commits(collectMergeConflict(repoPath, projectName, url, outputConflictPath));
 
                     logger.info("-------------------------- Collect merge tuples ----------------------------------");
                     collectMergeTuples(outputJsonPath, projectName, outputConflictPath);
 
                     logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath);
-                }else{
-                    if(args[0].contains("1")){
+                    mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath, record);
+                } else {
+                    if (args[0].contains("1")) {
                         logger.info("-------------------------- Collect conflict files ----------------------------------");
-                        collectMergeConflict(repoPath, projectName, url, outputConflictPath);
+                        record.setMerge_commits(collectMergeConflict(repoPath, projectName, url, outputConflictPath));
                     }
-                    if(args[0].contains("2")){
+                    if (args[0].contains("2")) {
                         logger.info("-------------------------- Collect merge tuples ----------------------------------");
                         collectMergeTuples(outputJsonPath, projectName, outputConflictPath);
                     }
-                    if(args[0].contains("3")){
+                    if (args[0].contains("3")) {
                         logger.info("-------------------------- Merge tuples analysis ----------------------------------");
-                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath);
+                        mergeTuplesAnalysis(PathUtils.getFileWithPathSegment(outputJsonPath, projectName), projectName, filteredTuplePath, record);
                     }
                 }
 //                deleteRepo(repoPath);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+            IOUtils.outputRes2csv(progressFile, record.toString());
         });
     }
 
@@ -82,9 +84,9 @@ public class Client {
         FileUtils.deleteDirectory(new File(repoPath));
     }
 
-    public static void collectMergeConflict(String projectPath, String projectName, String url, String output) throws Exception {
+    public static int collectMergeConflict(String projectPath, String projectName, String url, String output) throws Exception {
         ConflictCollector collector = new ConflictCollector(projectPath, projectName, url, output);
-        collector.process();
+        return collector.process();
     }
 
     public static void collectMergeTuples(String outputDir, String projectName, String conflictFilesPath) throws Exception {
@@ -95,9 +97,9 @@ public class Client {
         JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputDir);
     }
 
-    public static void mergeTuplesAnalysis(String jsonDir, String projectName, String outputDir) throws Exception {
+    public static void mergeTuplesAnalysis(String jsonDir, String projectName, String outputDir, CollectRecord record) throws Exception {
         DatasetFilter filter = new DatasetFilter(jsonDir, projectName, outputDir);
-//        filter.analysis();
-        filter.analysisDefault();
+        filter.analysis(record);
+//        filter.analysisDefault();
     }
 }

@@ -46,7 +46,7 @@ public class ConflictCollector {
      * Get base, ours, theirs, truth and conflict versions of all java source files with conflicts.
      * Conflict files contain conflict blocks.
      */
-    public void process() throws Exception {
+    public int process() throws Exception {
         GitService service = new GitService();
         repository = service.cloneIfNotExist(this.projectPath, URL);
 
@@ -73,11 +73,12 @@ public class ConflictCollector {
         startTime = System.currentTimeMillis();
         executor.shutdown();
         while(!executor.isTerminated());
-        cnt = 0; //todo bug fix
+
         Long end = System.currentTimeMillis();
         System.out.println(1.0 * (end - start) / 60000 + "min");
 
         threeWayMergeFile(PathUtils.getFileWithPathSegment(output, projectName));
+        return mergeCommits.size();
     }
 
     private void mergeAndCollectConflictFiles(RevCommit merged) throws Exception {

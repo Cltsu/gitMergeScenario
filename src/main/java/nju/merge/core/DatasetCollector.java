@@ -134,7 +134,7 @@ public class DatasetCollector {
 
                         try {
                             mergeTuples.addAll(extractMergeTuples(conflict, resolve, dir.toString()));
-                            logger.info("{} tuples added", mergeTuples.size());
+                            logger.info("{} tuples added from conflict marker", mergeTuples.size());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

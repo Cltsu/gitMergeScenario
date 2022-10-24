@@ -1,15 +1,13 @@
 package nju.merge.core;
 
+import nju.merge.entity.CollectRecord;
 import nju.merge.entity.MergeTuple;
 import nju.merge.utils.JSONUtils;
 import nju.merge.utils.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static nju.merge.utils.JSONUtils.loadTuplesFromJson;
@@ -82,29 +80,21 @@ public class DatasetFilter {
         return tuple.base.size() == 0;
     }
 
-    private static boolean equalCodeSnippet(List<String> one, List<String> another){
-        if(one.size() == another.size()){
-            for(int i = 0; i < one.size() ; i++){
-                if(!one.get(i).equals(another.get(i))) return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-
-    public void analysis() throws Exception {
-        logger.error("project name : {}", this.projectName);
+    public void analysis(CollectRecord record) throws Exception {
+        record.setTotal_tuples(this.tuples.size());
         logger.error("Total tuples : {}", this.tuples.size());
 
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
         List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).collect(Collectors.toList());
         logger.error("Accept one side : {} ", acceptOneSide.size());
         logger.error("Lack of resolution : {} ", lackOfR.size());
+        record.setAccept_one_side(acceptOneSide.size());
+        record.setLack_of_resolution(lackOfR.size());
 
         // 要求有ours, theirs, resolve(这里需要这么严格吗)
         tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
         logger.error("Complete tuples : {}", this.tuples.size());
+        record.setComplete_tuples(this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
@@ -117,9 +107,13 @@ public class DatasetFilter {
         logger.error("Concat : {} ", concat.size());
         logger.error("MixLine : {} ", mixLine.size());
         logger.error("Out of vocabulary : {} ", outOfVocabulary.size());
+        record.setConcat(concat.size());
+        record.setMixline(mixLine.size());
+        record.setOut_of_vocabulary(outOfVocabulary.size());
 
         List<MergeTuple> noBase = this.tuples.stream().filter(DatasetFilter::filterNoBase).collect(Collectors.toList());
-        logger.error("no base: {}  {}%", noBase.size(), 100*(double)(noBase.size())/tuples.size());
+        logger.error("no base: {}  {}%", noBase.size(), tuples.size()==0? 0: (100 * noBase.size() /tuples.size()));
+        record.setNo_base(noBase.size());
 
     }
 
