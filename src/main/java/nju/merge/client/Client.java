@@ -92,8 +92,6 @@ public class Client {
     public static void collectMergeTuples(String outputDir, String projectName, String conflictFilesPath) throws Exception {
         DatasetCollector collector = new DatasetCollector();
         collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectName));
-        logger.error("project name: {}", projectName);
-        logger.error("{} merge tuple collected.", collector.mergeTuples.size());
         JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputDir);
     }
 

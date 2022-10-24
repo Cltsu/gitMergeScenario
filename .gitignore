@@ -3,7 +3,7 @@
 /target/
 /output/
 /repos/
-/logs/
+/log/
 /gitMergeScenario.iml
 # MacOS
 .DS_Store
