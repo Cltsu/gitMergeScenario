@@ -58,6 +58,8 @@ public class GitService {
                     commits.add(commit);
                 }
             }
+        }catch (MissingObjectException e){
+            logger.error("missing object in {}", repository);
         }
         return commits;
     }
