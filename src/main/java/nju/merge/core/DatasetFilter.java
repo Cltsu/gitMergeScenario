@@ -99,7 +99,7 @@ public class DatasetFilter {
 
 
         tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
-        logger.info("Complete tuples : {}", this.tuples.size());
+//        logger.info("Complete tuples : {}", this.tuples.size());
         List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
         logger.info("Accept one side : {} ", acceptOneSide.size());
 
