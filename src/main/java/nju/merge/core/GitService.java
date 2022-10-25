@@ -56,10 +56,9 @@ public class GitService {
                 }
             }
         }
+        System.out.println("=============================================================" + commits.size());
         return commits;
     }
-
-
 
 
 }

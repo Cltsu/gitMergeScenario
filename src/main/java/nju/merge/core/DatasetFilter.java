@@ -93,25 +93,26 @@ public class DatasetFilter {
     public void analysis() throws Exception {
         logger.info("Total tuples : {}", this.tuples.size());
 
-        List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
+
         List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).collect(Collectors.toList());
-        logger.info("Accept one side : {} ", acceptOneSide.size());
         logger.info("Lack of resolution : {} ", lackOfR.size());
 
-        // 要求有ours, theirs, resolve(这里需要这么严格吗)
+
         tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
         logger.info("Complete tuples : {}", this.tuples.size());
+        List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
+        logger.info("Accept one side : {} ", acceptOneSide.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
         List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
 
-        JSONUtils.writeTuples2Json(mixLine, projectName, PathUtils.getFileWithPathSegment(outputDir, "mixLine"));
-        JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
-        JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtils.getFileWithPathSegment(outputDir, "lackOfResolution"));
+//        JSONUtils.writeTuples2Json(mixLine, projectName, PathUtils.getFileWithPathSegment(outputDir, "mixLine"));
+//        JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
+//        JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtils.getFileWithPathSegment(outputDir, "lackOfResolution"));
 
         logger.info("Concat : {} ", concat.size());
-        logger.info("MixLine : {} ", mixLine.size());
+        logger.info("Interleave : {} ", mixLine.size());
         logger.info("Out of vocabulary : {} ", outOfVocabulary.size());
     }
 

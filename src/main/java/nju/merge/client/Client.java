@@ -93,7 +93,7 @@ public class Client {
 
     public static void mergeTuplesAnalysis(String jsonPath, String projectName, String outputDir) throws Exception {
         DatasetFilter filter = new DatasetFilter(jsonPath, projectName, outputDir);
-//        filter.analysis();
-        filter.analysisDefault();
+        filter.analysis();
+//        filter.analysisDefault();
     }
 }

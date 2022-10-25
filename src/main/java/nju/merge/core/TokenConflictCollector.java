@@ -186,8 +186,8 @@ public class TokenConflictCollector {
     }
 
     public static void main(String[] args) throws Exception {
-        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\mergeTuples\\Categories.java.json", "G:\\merge\\output\\");
-//        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
+//        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\mergeTuples\\Categories.java.json", "G:\\merge\\output\\");
+        TokenConflictCollector tcc = new TokenConflictCollector("G:\\merge\\output\\filteredTuples\\defaultFilter\\junit4.json", "G:\\merge\\output\\");
         tcc.collectTokenConflict();
     }
 }
