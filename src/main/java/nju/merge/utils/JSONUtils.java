@@ -24,13 +24,15 @@ public class JSONUtils {
         File projectTupleDir = new File(path);
         String[] fileList = projectTupleDir.list();
         if (fileList == null) {
+            logger.warn("no file found in {}", path);
             return null;
         }
         int count = 0;
         for (String s : fileList) {
             // todo: 一次性加载所有tuple在海量数据下可能溢出？
-            res.addAll(loadArrayFromJson(PathUtils.getFileWithPathSegment(path, s), "mergeTuples", MergeTuple.class));
-            logger.info("{} files loaded for analysis out of {} files", ++count, fileList.length);
+            String withPathSegment = PathUtils.getFileWithPathSegment(path, s);
+            res.addAll(loadArrayFromJson(withPathSegment, "mergeTuples", MergeTuple.class));
+            logger.info("{} files loaded for analysis out of {} files from {}", ++count, fileList.length, withPathSegment);
         }
         return res;
     }
@@ -57,7 +59,11 @@ public class JSONUtils {
             });
             json.put("mergeTuples", array);
             json2File(json, PathUtils.getFileWithPathSegment(output, project), Integer.toString(fileCounter));
-            logger.info("{}% -- {} out of {} tuple added to JSONArray", 100d * batchEnd / len, batchEnd, len);
+            if(len == 0){
+                logger.info(" {} tuple added to JSONArray", len);
+            }else{
+                logger.info("{}% -- {} out of {} tuple added to JSONArray", 100d * batchEnd / len, batchEnd, len);
+            }
 
             fileCounter++;
             batchStart = batchEnd;

@@ -25,13 +25,13 @@ public class DatasetFilter {
         this.outputDir = outputDir;
     }
 
-    public static boolean defaultFilter(MergeTuple tuple){
-        return filterIncompleteTuple(tuple) && !filterAcceptOneSide(tuple);
-    }
+//    public static boolean defaultFilter(MergeTuple tuple){
+//        return filterIncompleteTuple(tuple) && !filterAcceptOneSide(tuple);
+//    }
 
-    public static boolean filterIncompleteTuple(MergeTuple tuple){
-        return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0 || tuple.base.size()==0);
-    }
+//    public static boolean filterIncompleteTuple(MergeTuple tuple){
+//        return !(tuple.resolve.size() == 0 || tuple.ours.size() == 0 || tuple.theirs.size() == 0 || tuple.base.size()==0);
+//    }
 
     public static boolean filterAcceptOneSide(MergeTuple tuple){
         return tuple.resolve.equals(tuple.ours) || tuple.resolve.equals(tuple.theirs) || tuple.resolve.equals(tuple.base);
@@ -73,7 +73,7 @@ public class DatasetFilter {
     }
 
     public static boolean filterLackOfResolution(MergeTuple tuple){
-        return tuple.resolve.size() == 0;
+        return tuple.resolve == null;
     }
 
     public static boolean filterNoBase(MergeTuple tuple){
@@ -90,13 +90,14 @@ public class DatasetFilter {
         record.setLack_of_resolution(lackOfR.size());
 
         // 要求有ours, theirs, resolve(这里需要这么严格吗)
-        tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
-        record.setComplete_tuples(this.tuples.size());
+//        tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
+//        record.setComplete_tuples(this.tuples.size());
 
         List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
         List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
         List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
         JSONUtils.writeTuples2Json(mixLine, projectName, PathUtils.getFileWithPathSegment(outputDir, "mixLine"));
+        JSONUtils.writeTuples2Json(concat, projectName, PathUtils.getFileWithPathSegment(outputDir, "concat"));
         JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
         JSONUtils.writeTuples2Json(lackOfR, projectName, PathUtils.getFileWithPathSegment(outputDir, "lackOfResolution"));
         record.setConcat(concat.size());
@@ -104,13 +105,14 @@ public class DatasetFilter {
         record.setOut_of_vocabulary(outOfVocabulary.size());
 
         List<MergeTuple> noBase = this.tuples.stream().filter(DatasetFilter::filterNoBase).collect(Collectors.toList());
+        JSONUtils.writeTuples2Json(noBase, projectName, PathUtils.getFileWithPathSegment(outputDir, "nobase"));
         record.setNo_base(noBase.size());
 
     }
 
-    public void analysisDefault() throws Exception {
-        List<MergeTuple> defaultTuples = this.tuples.stream().filter(DatasetFilter::defaultFilter).collect(Collectors.toList());
-        JSONUtils.writeTuples2Json(defaultTuples, projectName, PathUtils.getFileWithPathSegment(outputDir, "defaultFilter"));
-        logger.info("default filtered tuples : {}", defaultTuples.size());
-    }
+//    public void analysisDefault() throws Exception {
+//        List<MergeTuple> defaultTuples = this.tuples.stream().filter(DatasetFilter::defaultFilter).collect(Collectors.toList());
+//        JSONUtils.writeTuples2Json(defaultTuples, projectName, PathUtils.getFileWithPathSegment(outputDir, "defaultFilter"));
+//        logger.info("default filtered tuples : {}", defaultTuples.size());
+//    }
 }

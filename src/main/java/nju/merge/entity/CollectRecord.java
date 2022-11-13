@@ -19,7 +19,12 @@ public class CollectRecord {
         return fields.stream().map(field -> {
             field.setAccessible(true);
             try {
-                return field.get(this).toString();
+                Object o = field.get(this);
+                if(o instanceof Integer && (Integer)o == -1){
+                    return "null";
+                }else{
+                    return o.toString();
+                }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
@@ -27,15 +32,15 @@ public class CollectRecord {
     }
 
     String project_name = "";
-    Integer merge_commits = 0;
-    Integer total_tuples = 0;
-    Integer accept_one_side = 0;
-    Integer lack_of_resolution = 0;
-    Integer complete_tuples = 0;
-    Integer concat = 0;
-    Integer mixline = 0;
-    Integer out_of_vocabulary = 0;
-    Integer no_base = 0;
+    Integer merge_commits = -1;
+    Integer total_tuples = -1;
+    Integer accept_one_side = -1;
+    Integer lack_of_resolution = -1;
+    Integer complete_tuples = -1;
+    Integer concat = -1;
+    Integer mixline = -1;
+    Integer out_of_vocabulary = -1;
+    Integer no_base = -1;
 
     public CollectRecord(String project_name) {
         this.project_name = project_name;

@@ -100,8 +100,11 @@ public class DatasetCollector {
         for(MergeTuple tuple : tupleList){
             int mark = tuple.mark;
 
-            if(mark > 0 && mark < copy.size() && rec[mark - 1] != -1 && rec[mark] != -1){
+            if(mark > 0 && mark < copy.size() && rec[mark - 1] != -1 && rec[mark] != -1) {
                 tuple.resolve = resolve.subList(rec[mark - 1] + 1, rec[mark]);
+            }else{
+                // no resolution can found
+                tuple.resolve = null;
             }
         }
         return tupleList;
