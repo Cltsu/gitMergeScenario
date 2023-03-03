@@ -15,11 +15,11 @@ import java.util.List;
 import static nju.merge.utils.FileUtils.lineFilter;
 import static nju.merge.utils.FileUtils.readFile;
 
-public class DatasetCollector {
+public class ChunkCollector {
     private static int[] rec = new int[0];
     public List<MergeTuple> mergeTuples;
 
-    public DatasetCollector(){
+    public ChunkCollector(){
         mergeTuples = new ArrayList<>();
     }
 

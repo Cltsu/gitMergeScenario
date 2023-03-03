@@ -1,8 +1,8 @@
 package nju.merge.client;
 
+import nju.merge.core.ChunkCollector;
 import nju.merge.core.ConflictCollector;
-import nju.merge.core.DatasetCollector;
-import nju.merge.core.DatasetFilter;
+import nju.merge.core.ChunkFilter;
 import nju.merge.utils.JSONUtils;
 import nju.merge.utils.PathUtils;
 import org.apache.commons.io.FileUtils;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class Client {
 
-    private static final String workdir = "G:/merge";
+    private static String workdir = "G:/merge";
     private static final String reposDir = workdir + "/repos";   // store all the repos
     private static final String outputDir = workdir + "/output";
     private static final String repoList = workdir + "/list.txt";
@@ -38,7 +38,9 @@ public class Client {
     public static void main(String[] args) throws Exception{
         Map<String, String> repos = new HashMap<>();
         addReposFromText(repoList, repos);
-
+        if(args.length == 2){
+            workdir = args[1];
+        }
         repos.forEach((projectName, url) -> {
             String repoPath = PathUtils.getFileWithPathSegment(reposDir, projectName); // store the specific repo
             String outputConflictPath = PathUtils.getFileWithPathSegment(outputDir, "conflictFiles");   // store all conflict files during collecting
@@ -86,13 +88,13 @@ public class Client {
     }
 
     public static void collectMergeTuples(String outputFile, String projectName, String conflictFilesPath) throws Exception {
-        DatasetCollector collector = new DatasetCollector();
+        ChunkCollector collector = new ChunkCollector();
         collector.extractFromProject(PathUtils.getFileWithPathSegment(conflictFilesPath, projectName));
         JSONUtils.writeTuples2Json(collector.mergeTuples, projectName, outputFile);
     }
 
     public static void mergeTuplesAnalysis(String jsonPath, String projectName, String outputDir) throws Exception {
-        DatasetFilter filter = new DatasetFilter(jsonPath, projectName, outputDir);
+        ChunkFilter filter = new ChunkFilter(jsonPath, projectName, outputDir);
         filter.analysis();
 //        filter.analysisDefault();
     }

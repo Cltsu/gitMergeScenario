@@ -14,14 +14,14 @@ import java.util.stream.Collectors;
 
 import static nju.merge.utils.JSONUtils.loadTuplesFromJson;
 
-public class DatasetFilter {
+public class ChunkFilter {
     private final String projectName;
     private final String outputDir;
 
     private List<MergeTuple> tuples;
-    private static final Logger logger = LoggerFactory.getLogger(DatasetFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChunkFilter.class);
 
-    public DatasetFilter(String path, String projectName, String outputDir) throws Exception {
+    public ChunkFilter(String path, String projectName, String outputDir) throws Exception {
         this.tuples = loadTuplesFromJson(path);
         this.projectName = projectName;
         this.outputDir = outputDir;
@@ -94,18 +94,18 @@ public class DatasetFilter {
         logger.info("Total tuples : {}", this.tuples.size());
 
 
-        List<MergeTuple> lackOfR = this.tuples.stream().filter(DatasetFilter::filterLackOfResolution).collect(Collectors.toList());
+        List<MergeTuple> lackOfR = this.tuples.stream().filter(ChunkFilter::filterLackOfResolution).collect(Collectors.toList());
         logger.info("Lack of resolution : {} ", lackOfR.size());
 
 
-        tuples = tuples.stream().filter(DatasetFilter::filterIncompleteTuple).collect(Collectors.toList());
+        tuples = tuples.stream().filter(ChunkFilter::filterIncompleteTuple).collect(Collectors.toList());
 //        logger.info("Complete tuples : {}", this.tuples.size());
-        List<MergeTuple> acceptOneSide = this.tuples.stream().filter(DatasetFilter::filterAcceptOneSide).collect(Collectors.toList());
+        List<MergeTuple> acceptOneSide = this.tuples.stream().filter(ChunkFilter::filterAcceptOneSide).collect(Collectors.toList());
         logger.info("Accept one side : {} ", acceptOneSide.size());
 
-        List<MergeTuple> concat = this.tuples.stream().filter(DatasetFilter::filterConcat).collect(Collectors.toList());
-        List<MergeTuple> mixLine = this.tuples.stream().filter(DatasetFilter::filterMixLine).collect(Collectors.toList());
-        List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(DatasetFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
+        List<MergeTuple> concat = this.tuples.stream().filter(ChunkFilter::filterConcat).collect(Collectors.toList());
+        List<MergeTuple> mixLine = this.tuples.stream().filter(ChunkFilter::filterMixLine).collect(Collectors.toList());
+        List<MergeTuple> outOfVocabulary = this.tuples.stream().filter(ChunkFilter::filterOutOfVocabularyLine).collect(Collectors.toList());
 
 //        JSONUtils.writeTuples2Json(mixLine, projectName, PathUtils.getFileWithPathSegment(outputDir, "mixLine"));
 //        JSONUtils.writeTuples2Json(outOfVocabulary, projectName, PathUtils.getFileWithPathSegment(outputDir, "outOfVocabulary"));
@@ -117,7 +117,7 @@ public class DatasetFilter {
     }
 
     public void analysisDefault() throws Exception {
-        List<MergeTuple> defaultTuples = this.tuples.stream().filter(DatasetFilter::defaultFilter).collect(Collectors.toList());
+        List<MergeTuple> defaultTuples = this.tuples.stream().filter(ChunkFilter::defaultFilter).collect(Collectors.toList());
         JSONUtils.writeTuples2Json(defaultTuples, projectName, PathUtils.getFileWithPathSegment(outputDir, "defaultFilter"));
         logger.info("tuples : {}", defaultTuples.size());
     }
