@@ -11,6 +11,7 @@ public class MergeConflict {
     public RevCommit ours;
     public RevCommit theirs;
 
+    public String suffix;
     public String commitId;
     public List<String> conflictFiles;
 

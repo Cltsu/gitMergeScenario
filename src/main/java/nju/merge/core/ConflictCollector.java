@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConflictCollector {
     private static final Logger logger = LoggerFactory.getLogger(GitService.class);
@@ -33,11 +34,14 @@ public class ConflictCollector {
     private final String output;
     private Repository repository;
 
-    public ConflictCollector(String projectPath, String projectName, String url, String output) {
+    private final String[] fileType;
+
+    public ConflictCollector(String projectPath, String projectName, String url, String output, String[] fileType) {
         this.projectName = projectName;
         this.projectPath = projectPath;
         this.URL = url;
         this.output = output;
+        this.fileType = fileType;
     }
 
     /**
@@ -59,9 +63,15 @@ public class ConflictCollector {
             saveConflictToFiles(conflict);
         }
 
-        threeWayMergeFile(PathUtils.getFileWithPathSegment(output, projectName));
+//        threeWayMergeFile(PathUtils.getFileWithPathSegment(output, projectName));
     }
 
+    private String isTargetFileType(String filename){
+        for(String s : fileType){
+            if(filename.endsWith(s)) return s;
+        }
+        return "";
+    }
     private void mergeAndGetConflict(RevCommit resolve, List<MergeConflict> conflictList) throws Exception {
         RevCommit ours = resolve.getParents()[0];
         RevCommit theirs = resolve.getParents()[1];
@@ -73,9 +83,8 @@ public class ConflictCollector {
             RevCommit base = (RevCommit) rMerger.getBaseCommitId();
 
             MergeConflict conflict = new MergeConflict();
-
             rMerger.getMergeResults().forEach((file, result) -> {
-                if (file.endsWith(".java") && result.containsConflicts()) {
+                if (!isTargetFileType(file).equals("") && result.containsConflicts()) {
                     logger.info("file {} added", file);
                     conflict.conflictFiles.add(file);
                 }
@@ -95,7 +104,7 @@ public class ConflictCollector {
     private void saveConflictToFiles(MergeConflict conflict){
         Map<String, MergeScenario> scenarioMap = new HashMap<>();
         for (String fileName : conflict.conflictFiles) {
-            scenarioMap.put(fileName, new MergeScenario(projectName, conflict.commitId, fileName));
+            scenarioMap.put(fileName, new MergeScenario(projectName, conflict.commitId, fileName ));
         }
 
         if (scenarioMap.size() == 0)
@@ -158,7 +167,8 @@ public class ConflictCollector {
 
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                if (dir.toString().endsWith(".java")) {
+                if (!isTargetFileType(dir.toString()).equals("")) {
+                    String suffix = isTargetFileType(dir.toString());
                     File[] files = dir.toFile().listFiles();
                     if (files == null)
                         return FileVisitResult.CONTINUE;
@@ -166,28 +176,22 @@ public class ConflictCollector {
                     File base = null, ours = null, theirs = null, resolve = null;
                     for (File f : files) {
                         String name = f.getName();
-                        switch (name) {
-                            case "base.java":
-                                base = f;
-                                break;
-                            case "ours.java":
-                                ours = f;
-                                break;
-                            case "theirs.java":
-                                theirs = f;
-                                break;
-                            case "resolve.java":
-                                resolve = f;
-                                break;
+                        if(name.equals("base" + suffix)){
+                            base = f;
+                        } else if(name.equals("ours" + suffix)){
+                            ours = f;
+                        } else if(name.equals("theirs" + suffix)){
+                            theirs = f;
+                        } else if(name.equals("resolve" + suffix)){
+                            resolve = f;
                         }
                     }
                     if (base != null && ours != null && theirs != null && resolve != null) {
-                        File conflict = new File(dir.toString(), "conflict.java");
+                        File conflict = new File(dir.toString(), "conflict" + suffix);
                         if (conflict.exists())
                             if (!conflict.delete()) {
                                 logger.warn("file failed to be deleted");
                             }
-
                         Files.copy(ours.toPath(), conflict.toPath());
 
                         // KEY: 会直接将冲突写入 conflict 文件
