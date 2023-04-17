@@ -135,7 +135,7 @@ public class ConflictCollector {
             walk.parseAny(id);
         } catch (MissingObjectException e) {
             logger.info("Base not found in {}", id.getName());
-            e.printStackTrace();
+//            e.printStackTrace();
             return false;
         } catch (IOException e) {
             logger.warn("A pack file or loose object could not be read!");
